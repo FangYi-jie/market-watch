@@ -1,0 +1,2681 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>财经资讯 & 日历</title>
+<style>
+/* =============================================
+   CSS 变量 & 基础重置
+============================================= */
+:root {
+  --bg-primary:    #0a0c0f;
+  --bg-secondary:  #111418;
+  --bg-card:       #161b22;
+  --bg-card-hover: #1c2230;
+  --bg-input:      #0d1117;
+  --border-color:  #21262d;
+  --border-focus:  #388bfd;
+
+  --text-primary:   #e6edf3;
+  --text-secondary: #8b949e;
+  --text-muted:     #484f58;
+  --text-accent:    #58a6ff;
+
+  --rise-color: #f85149;
+  --fall-color: #3fb950;
+
+  --accent-blue:   #58a6ff;
+  --accent-purple: #bc8cff;
+  --accent-orange: #ffa657;
+  --accent-green:  #3fb950;
+  --accent-teal:   #39c5bb;
+
+  /* 标签类型颜色 */
+  --tag-news:    #58a6ff;
+  --tag-report:  #bc8cff;
+  --tag-policy:  #ffa657;
+  --tag-notice:  #3fb950;
+  --tag-hot:     #f85149;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+
+  --shadow-card: 0 4px 20px rgba(0,0,0,0.4);
+  --transition: all 0.22s ease;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 14px; scroll-behavior: smooth; }
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+               'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  line-height: 1.6;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 2px; }
+
+/* =============================================
+   顶部标题栏
+============================================= */
+#header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(10,12,15,0.96);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border-color);
+  padding: 0 16px;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.header-left { display: flex; align-items: center; gap: 10px; }
+.header-logo {
+  width: 28px; height: 28px; border-radius: 7px;
+  background: linear-gradient(135deg, #58a6ff, #bc8cff);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 13px; color: #fff;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(88,166,255,0.25);
+}
+.header-title { font-size: 15px; font-weight: 600; color: var(--text-primary); }
+.header-subtitle {
+  font-size: 11px; color: var(--text-muted);
+  margin-left: 6px; display: none;
+}
+@media(min-width:480px){ .header-subtitle { display: inline; } }
+.header-right { display: flex; align-items: center; gap: 6px; }
+
+/* =============================================
+   通用按钮
+============================================= */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 4px; border: none; cursor: pointer;
+  font-size: 12px; font-weight: 500; border-radius: var(--radius-sm);
+  transition: var(--transition); white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-sm { padding: 6px 10px; min-height: 30px; }
+.btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+.btn-ghost:hover { background: var(--bg-card); color: var(--text-primary); }
+.btn-primary { background: var(--accent-blue); color: #0a0c0f; }
+.btn-primary:hover { opacity: 0.88; }
+
+.refresh-icon { transition: transform 0.6s ease; display: inline-block; }
+.refreshing .refresh-icon { animation: spin 1s linear infinite; }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+/* 🔴 LIVE 徽章（实时抓取标识） */
+.live-badge {
+  display: inline-block;
+  padding: 1px 6px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+  background: #f85149;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+  vertical-align: middle;
+  animation: pulse-live 2s ease-in-out infinite;
+}
+@keyframes pulse-live {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* =============================================
+   主容器
+============================================= */
+#main-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* =============================================
+   页面切换标签
+============================================= */
+.page-tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 4px;
+}
+.page-tab {
+  flex: 1;
+  text-align: center;
+  padding: 8px 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: var(--transition);
+  -webkit-tap-highlight-color: transparent;
+}
+.page-tab.active {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+}
+.page-tab:hover:not(.active) { color: var(--text-primary); }
+
+/* =============================================
+   卡片
+============================================= */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  transition: var(--transition);
+}
+.card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  gap: 8px;
+}
+.card-title { font-size: 15px; font-weight: 600; color: var(--text-primary); }
+.card-subtitle { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+
+/* =============================================
+   tab 过滤器（指数 / 类型）
+============================================= */
+.filter-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.filter-chip {
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 20px;
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: var(--transition);
+  -webkit-tap-highlight-color: transparent;
+  white-space: nowrap;
+}
+.filter-chip:hover { border-color: #30363d; color: var(--text-primary); }
+.filter-chip.active {
+  border-color: transparent;
+  color: #0a0c0f;
+  font-weight: 600;
+}
+.filter-chip.active.chip-all    { background: var(--accent-blue); }
+.filter-chip.active.chip-XM     { background: #58a6ff; }
+.filter-chip.active.chip-HSTECH { background: #bc8cff; }
+.filter-chip.active.chip-BJ     { background: #ffa657; }
+.filter-chip.active.chip-XF     { background: #3fb950; }
+.filter-chip.active.chip-HS300  { background: #f85149; }
+.filter-chip.active.chip-NDX    { background: #39c5bb; }
+.filter-chip.active.chip-news   { background: var(--tag-news); }
+.filter-chip.active.chip-report { background: var(--tag-report); }
+.filter-chip.active.chip-policy { background: var(--tag-policy); }
+.filter-chip.active.chip-notice { background: var(--tag-notice); }
+
+/* =============================================
+   时间过滤器
+============================================= */
+.time-filter-row {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 14px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.time-filter-row::-webkit-scrollbar { display: none; }
+.time-chip {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 20px;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: var(--transition);
+  -webkit-tap-highlight-color: transparent;
+}
+.time-chip:hover { color: var(--text-secondary); border-color: #30363d; }
+.time-chip.active {
+  background: rgba(88,166,255,0.12);
+  border-color: var(--accent-blue);
+  color: var(--accent-blue);
+}
+
+/* =============================================
+   资讯条目
+============================================= */
+.news-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.news-item {
+  padding: 13px 12px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: var(--transition);
+  border: 1px solid transparent;
+  margin-bottom: 6px;
+  -webkit-tap-highlight-color: transparent;
+}
+.news-item:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-color);
+}
+.news-item:active { opacity: 0.85; }
+
+.news-item-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.news-index-tag {
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.news-type-tag {
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.type-news   { background: rgba(88,166,255,0.15);  color: var(--tag-news); }
+.type-report { background: rgba(188,140,255,0.15); color: var(--tag-report); }
+.type-policy { background: rgba(255,166,87,0.15);  color: var(--tag-policy); }
+.type-notice { background: rgba(63,185,80,0.15);   color: var(--tag-notice); }
+.type-hot    { background: rgba(248,81,73,0.15);   color: var(--tag-hot); }
+
+.news-source {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.news-time {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.news-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: 1.55;
+  margin-bottom: 5px;
+}
+.news-summary {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.news-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-top: 6px;
+}
+.news-link-hint {
+  font-size: 11px;
+  color: var(--accent-blue);
+  opacity: 0.8;
+}
+
+/* 加载更多 */
+#load-more-wrap {
+  text-align: center;
+  padding: 10px 0 4px;
+}
+.load-more-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 8px 20px; font-size: 12px; font-weight: 500;
+  color: var(--text-secondary); background: var(--bg-secondary);
+  border: 1px solid var(--border-color); border-radius: 20px;
+  cursor: pointer; transition: var(--transition);
+  -webkit-tap-highlight-color: transparent;
+}
+.load-more-btn:hover { color: var(--text-primary); border-color: #30363d; }
+
+.news-stats-bar {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+/* =============================================
+   空状态 / 加载态
+============================================= */
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.loading-state {
+  text-align: center;
+  padding: 30px 20px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.loading-dot {
+  display: inline-block;
+  animation: blink 1.2s step-end infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+/* =============================================
+   财经日历
+============================================= */
+.calendar-section { display: flex; flex-direction: column; gap: 0; }
+
+.cal-month-group { margin-bottom: 16px; }
+.cal-month-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 8px;
+  padding: 0 2px;
+}
+
+.calendar-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 10px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  margin-bottom: 6px;
+  cursor: pointer;
+  transition: var(--transition);
+  border: 1px solid transparent;
+  -webkit-tap-highlight-color: transparent;
+  position: relative;
+}
+.calendar-item:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-color);
+}
+.calendar-item.today-event {
+  border-color: rgba(88,166,255,0.35);
+  background: rgba(88,166,255,0.06);
+}
+.calendar-item.past-event { opacity: 0.5; }
+
+.cal-date-block {
+  flex-shrink: 0;
+  width: 40px;
+  text-align: center;
+}
+.cal-month-num {
+  font-size: 10px;
+  color: var(--text-muted);
+  line-height: 1;
+  margin-bottom: 1px;
+}
+.cal-day-num {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
+}
+.cal-weekday {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+.calendar-item.today-event .cal-day-num { color: var(--accent-blue); }
+
+.cal-divider {
+  width: 1px;
+  background: var(--border-color);
+  align-self: stretch;
+  flex-shrink: 0;
+  margin: 2px 0;
+}
+
+.cal-body { flex: 1; min-width: 0; }
+.cal-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: 1.5;
+  margin-bottom: 4px;
+}
+.cal-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 3px;
+}
+.cal-tag {
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+}
+.cal-tag.rebalance { background: rgba(255,166,87,0.15); color: #ffa657; }
+.cal-tag.dividend  { background: rgba(63,185,80,0.15);  color: #3fb950; }
+.cal-tag.report    { background: rgba(188,140,255,0.15); color: #bc8cff; }
+.cal-tag.holiday   { background: rgba(248,81,73,0.12);  color: #f85149; }
+.cal-tag.macro     { background: rgba(88,166,255,0.15); color: #58a6ff; }
+.cal-tag.fund      { background: rgba(57,197,187,0.15); color: #39c5bb; }
+
+.cal-note {
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.55;
+  margin-top: 2px;
+}
+.cal-link-hint {
+  font-size: 11px;
+  color: var(--accent-blue);
+  opacity: 0.7;
+  margin-top: 3px;
+}
+
+/* 日历过滤行 */
+.cal-filter-row {
+  display: flex; gap: 6px; flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+/* =============================================
+   Toast 通知
+============================================= */
+#toast-container {
+  position: fixed;
+  bottom: 24px; left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+}
+.toast {
+  background: #2d333b;
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  padding: 8px 18px;
+  font-size: 13px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  animation: toastIn 0.25s ease;
+  pointer-events: none;
+  white-space: nowrap;
+}
+@keyframes toastIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+
+/* =============================================
+   日期选择器
+============================================= */
+.date-picker-row {
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+}
+.date-picker-inner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.date-input {
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: var(--transition);
+  min-width: 128px;
+}
+.date-input:focus { outline: none; border-color: var(--border-focus); }
+.date-input::-webkit-calendar-picker-indicator { filter: invert(0.55); cursor: pointer; }
+.date-input::-webkit-inner-spin-button { display: none; }
+.date-clear-btn {
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 500;
+  background: rgba(248,81,73,0.1);
+  border: 1px solid rgba(248,81,73,0.25);
+  border-radius: var(--radius-sm);
+  color: var(--tag-hot);
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+.date-clear-btn:hover { opacity: 0.8; }
+.date-hint {
+  font-size: 11px;
+  color: var(--accent-blue);
+  margin-top: 5px;
+}
+.time-filter-row.disabled {
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+/* =============================================
+   footer
+============================================= */
+footer {
+  text-align: center;
+  padding: 16px;
+  font-size: 11px;
+  color: var(--text-muted);
+  border-top: 1px solid var(--border-color);
+  margin-top: 10px;
+}
+
+/* =============================================
+   分割线 & 工具类
+============================================= */
+.divider { height: 1px; background: var(--border-color); margin: 12px 0; }
+.mt-8 { margin-top: 8px; }
+.mt-12 { margin-top: 12px; }
+.section-label {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.5px;
+  color: var(--text-muted); text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.muted { color: var(--text-muted); }
+
+/* 无障碍 focus */
+button:focus-visible, [tabindex]:focus-visible {
+  outline: 2px solid var(--accent-blue); outline-offset: 2px;
+}
+
+/* 移动端微调 */
+@media(max-width:480px){
+  #main-container { padding: 12px 10px; gap: 16px; }
+  .news-title { font-size: 13px; }
+  .cal-day-num { font-size: 18px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ===== 顶部标题栏 ===== -->
+<header id="header">
+  <div class="header-left">
+    <div class="header-logo">📊</div>
+    <div>
+      <span class="header-title">财经资讯 & 日历</span>
+      <span class="header-subtitle">实时财经快讯</span>
+    </div>
+  </div>
+  <div class="header-right">
+    <div id="update-time" style="font-size:11px;color:var(--text-muted);display:none"></div>
+    <button class="btn btn-ghost btn-sm" id="refresh-btn" onclick="handleRefresh()">
+      <span class="refresh-icon">↻</span> 刷新
+    </button>
+  </div>
+</header>
+
+<!-- ===== 主容器 ===== -->
+<div id="main-container">
+
+  <!-- 页面切换 -->
+  <div class="page-tabs" role="tablist">
+    <div class="page-tab active" id="ptab-news"  onclick="switchPage('news')"  role="tab" aria-selected="true">📰 财经资讯</div>
+    <div class="page-tab"        id="ptab-cal"   onclick="switchPage('cal')"   role="tab" aria-selected="false">📅 财经日历</div>
+  </div>
+
+  <!-- ============================
+       资讯页
+  ============================ -->
+  <div id="page-news">
+    <div class="card">
+      <!-- 标题行 -->
+      <div class="card-header">
+        <div>
+          <div class="card-title">📰 财经资讯聚合</div>
+          <div class="card-subtitle">东方财富实时资讯 · 每5分钟自动刷新 · 点击直达原文</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="handleRefresh()">↻ 刷新</button>
+      </div>
+
+      <!-- 指数过滤 -->
+      <div class="section-label">指数筛选</div>
+      <div class="filter-row" id="index-filter-row">
+        <div class="filter-chip chip-all active"   data-ifilter="all"    onclick="setIndexFilter('all')">全部指数</div>
+        <div class="filter-chip chip-XM"           data-ifilter="XM"     onclick="setIndexFilter('XM')">中证畜牧</div>
+        <div class="filter-chip chip-HSTECH"       data-ifilter="HSTECH" onclick="setIndexFilter('HSTECH')">恒生科技</div>
+        <div class="filter-chip chip-BJ"           data-ifilter="BJ"     onclick="setIndexFilter('BJ')">中证白酒</div>
+        <div class="filter-chip chip-XF"           data-ifilter="XF"     onclick="setIndexFilter('XF')">消费红利</div>
+        <div class="filter-chip chip-HS300"        data-ifilter="HS300"  onclick="setIndexFilter('HS300')">沪深300</div>
+        <div class="filter-chip chip-NDX"          data-ifilter="NDX"    onclick="setIndexFilter('NDX')">纳斯达克100</div>
+      </div>
+
+      <!-- 类型过滤 -->
+      <div class="section-label">内容类型</div>
+      <div class="filter-row" id="type-filter-row">
+        <div class="filter-chip chip-all active"   data-tfilter="all"    onclick="setTypeFilter('all')">全部类型</div>
+        <div class="filter-chip chip-news"         data-tfilter="news"   onclick="setTypeFilter('news')">新闻</div>
+        <div class="filter-chip chip-report"       data-tfilter="report" onclick="setTypeFilter('report')">研报</div>
+        <div class="filter-chip chip-policy"       data-tfilter="policy" onclick="setTypeFilter('policy')">政策</div>
+        <div class="filter-chip chip-notice"       data-tfilter="notice" onclick="setTypeFilter('notice')">公告</div>
+      </div>
+
+      <!-- 时间过滤（实时数据始终显示，无需时间过滤） -->
+      <div class="time-filter-row" id="time-filter-row" style="display:none"></div>
+
+      <!-- 日期回溯 -->
+      <div class="date-picker-row">
+        <div class="date-picker-inner">
+          <span style="font-size:12px;color:var(--text-secondary);font-weight:500">📅 日期回溯</span>
+          <input type="date" id="news-date-picker" class="date-input"
+                 min="2025-05-01" max="2026-05-31"
+                 onchange="setNewsDateFilter(this.value)"
+                 title="选择日期，查看该日前后7天资讯">
+          <button class="date-clear-btn" id="news-date-clear"
+                  onclick="clearNewsDateFilter()" style="display:none">✕ 清除</button>
+        </div>
+        <div class="date-hint" id="news-date-hint" style="display:none"></div>
+      </div>
+
+      <!-- 统计行 -->
+      <div class="news-stats-bar" id="news-stats-bar">
+        <span id="news-count-label">共 -- 条</span>
+        <span id="last-update-label" style="color:var(--text-muted)">--</span>
+      </div>
+
+      <!-- 资讯列表 -->
+      <div class="news-list" id="news-list">
+        <div class="loading-state">正在加载资讯<span class="loading-dot">...</span></div>
+      </div>
+
+      <!-- 加载更多 -->
+      <div id="load-more-wrap" style="display:none">
+        <div class="load-more-btn" onclick="loadMore()">
+          <span>加载更多</span>
+          <span style="color:var(--text-muted)" id="load-more-hint"></span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ============================
+       日历页
+  ============================ -->
+  <div id="page-cal" style="display:none">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">📅 财经日历</div>
+          <div class="card-subtitle">指数调仓 · 基金分红 · 财报日程 · 宏观大事</div>
+        </div>
+      </div>
+
+      <!-- 日历类型过滤 -->
+      <div class="cal-filter-row" id="cal-filter-row">
+        <div class="filter-chip chip-all active" data-cfilter="all"       onclick="setCalFilter('all')">全部事件</div>
+        <div class="filter-chip"                 data-cfilter="rebalance" onclick="setCalFilter('rebalance')">指数调仓</div>
+        <div class="filter-chip"                 data-cfilter="dividend"  onclick="setCalFilter('dividend')">基金分红</div>
+        <div class="filter-chip"                 data-cfilter="report"    onclick="setCalFilter('report')">财报/业绩</div>
+        <div class="filter-chip"                 data-cfilter="macro"     onclick="setCalFilter('macro')">宏观事件</div>
+        <div class="filter-chip"                 data-cfilter="holiday"   onclick="setCalFilter('holiday')">休市/假期</div>
+        <div class="filter-chip"                 data-cfilter="fund"      onclick="setCalFilter('fund')">基金事件</div>
+      </div>
+
+      <!-- 月份跳转 -->
+      <div class="date-picker-row">
+        <div class="date-picker-inner">
+          <span style="font-size:12px;color:var(--text-secondary);font-weight:500">📅 跳转到月份</span>
+          <input type="month" id="cal-month-picker" class="date-input"
+                 min="2025-05" max="2026-12"
+                 onchange="setCalMonthFilter(this.value)"
+                 title="选择月份，只显示该月事件">
+          <button class="date-clear-btn" id="cal-month-clear"
+                  onclick="clearCalMonthFilter()" style="display:none">✕ 显示全部</button>
+        </div>
+        <div class="date-hint" id="cal-month-hint" style="display:none"></div>
+      </div>
+
+      <!-- 日历列表 -->
+      <div class="calendar-section" id="calendar-section">
+        <div class="loading-state">加载日历中...</div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main-container -->
+
+<footer>
+  数据来源：东方财富 · 中证指数 · 恒生指数 · 各券商研报 · 仅供个人参考，不构成投资建议
+</footer>
+
+<div id="toast-container"></div>
+
+<script>
+/* ============================================================
+   指数配置
+============================================================ */
+const INDEX_MAP = {
+  XM:     { name: '中证畜牧', color: '#58a6ff',  bg: 'rgba(88,166,255,0.15)' },
+  HSTECH: { name: '恒生科技', color: '#bc8cff',  bg: 'rgba(188,140,255,0.15)' },
+  BJ:     { name: '中证白酒', color: '#ffa657',  bg: 'rgba(255,166,87,0.15)' },
+  XF:     { name: '消费红利', color: '#3fb950',  bg: 'rgba(63,185,80,0.15)' },
+  HS300:  { name: '沪深300',  color: '#f85149',  bg: 'rgba(248,81,73,0.12)' },
+  NDX:    { name: '纳斯达克100', color: '#39c5bb', bg: 'rgba(57,197,187,0.15)' },
+};
+
+/* ============================================================
+   资讯数据库
+   每条字段说明：
+     indexes  : string[] — 关联指数ID（可多个）
+     type     : 'news'|'report'|'policy'|'notice'
+     source   : 来源机构
+     title    : 标题
+     summary  : 摘要（1-2句话）
+     time     : ISO 日期字符串（YYYY-MM-DD 或精确到分钟）
+     url      : 跳转链接（东方财富搜索/官方网站）
+============================================================ */
+const NEWS_DATABASE = [
+  /* ===== 中证畜牧 ===== */
+  {
+    indexes: ['XM'],
+    type: 'news', source: '财联社',
+    title: '生猪价格强势回升，全国均价突破18元/公斤，养殖板块估值修复窗口打开',
+    summary: '农业农村部监测数据显示，全国生猪均价已连续三周回升，主产区出栏均价突破18元/公斤，市场供需结构显著改善，畜牧板块ETF单日净申购额创年内新高。',
+    time: '2026-05-12T09:15:00', url: 'https://www.cls.cn/telegraph'
+  },
+  {
+    indexes: ['XM'],
+    type: 'report', source: '华泰证券',
+    title: '【研报】华泰证券：畜牧板块2026年Q2展望——猪周期拐点确立，建议超配',
+    summary: '报告指出当前生猪头均盈利转正，规模场补栏积极性回升，预计Q3产能去化深化，猪价中枢有望上移至19-20元区间，维持畜牧板块"超配"评级，首推温氏、牧原。',
+    time: '2026-05-11T14:30:00', url: 'https://www.htsc.com.cn/research/macroResearch'
+  },
+  {
+    indexes: ['XM'],
+    type: 'news', source: '第一财经',
+    title: '饲料豆粕价格跌至近两年新低，饲料成本同比下降约12%，养殖利润空间显著扩大',
+    summary: '受美豆丰产及国内进口量增加影响，豆粕现货价格持续走软，当前3300元/吨左右，较去年高点下跌幅度超过20%，对生猪和禽类养殖成本形成明显利好。',
+    time: '2026-05-10T10:00:00', url: 'https://www.yicai.com/'
+  },
+  {
+    indexes: ['XM'],
+    type: 'policy', source: '农业农村部',
+    title: '农业农村部发布《2026年生猪稳产保供工作方案》，明确产能调控底线红线',
+    summary: '方案要求各地严格落实能繁母猪存栏量调控目标，对低于正常保有量5%以上的省份启动二级响应措施，稳定生猪长期产能供应。',
+    time: '2026-05-08T16:00:00', url: 'https://www.moa.gov.cn/'
+  },
+  {
+    indexes: ['XM'],
+    type: 'report', source: '中金公司',
+    title: '【研报】中金公司：非洲猪瘟影响趋稳，规模化优势企业竞争格局改善，维持增持',
+    summary: '中金认为规模化养殖企业凭借成本优势逐渐拉开与散户的盈利差距，行业集中度提升是未来五年核心逻辑；当前畜牧指数PE分位处于历史低位，配置性价比凸显。',
+    time: '2026-05-07T09:00:00', url: 'https://www.cicc.com/research'
+  },
+  {
+    indexes: ['XM'],
+    type: 'news', source: '上海证券报',
+    title: '中证畜牧ETF（516670）近一周净申购额超8亿元，机构加仓迹象明显',
+    summary: '畜牧ETF份额持续增加，显示机构资金对该板块后续行情保持乐观预期，换手率相对处于高位，市场活跃度回升。',
+    time: '2026-05-06T10:30:00', url: 'https://fund.eastmoney.com/516670.html'
+  },
+  {
+    indexes: ['XM'],
+    type: 'notice', source: '深交所',
+    title: '深圳证券交易所公告：中证畜牧指数成分股季度调整结果（2026年Q2）',
+    summary: '本次调整新纳入圣农发展、ST牧原子公司等3只个股，调出2只，调整自2026年6月第三个交易日起正式生效。',
+    time: '2026-05-04T17:00:00', url: 'https://www.csindex.com.cn/'
+  },
+  {
+    indexes: ['XM'],
+    type: 'news', source: '新华财经',
+    title: '全国畜牧业生产形势总体稳定，禽蛋价格同比小幅回升，下半年供应预期充裕',
+    summary: '农业农村部发布月度监测数据：全国生猪存栏环比小幅下降，但母猪存栏保持稳定；禽蛋价格进入传统旺季涨价通道，同比涨幅约5.3%。',
+    time: '2026-05-01T08:00:00', url: 'https://www.moa.gov.cn/govpublic/XMYS/'
+  },
+  {
+    indexes: ['XM'],
+    type: 'report', source: '申万宏源',
+    title: '【研报】申万宏源：猪价上行周期已开启，2026年全年利润有望大幅改善，目标PE 22x',
+    summary: '申万宏源研究报告预计2026年规模化头部养殖企业头均净利润将回升至180-250元区间，较2025年亏损期大幅改善，维持行业"看好"评级。',
+    time: '2026-04-28T11:00:00', url: 'https://www.swhyresearch.com/'
+  },
+  {
+    indexes: ['XM'],
+    type: 'news', source: '证券时报',
+    title: '畜牧板块年内涨幅领先大盘，资金持续流入，多机构上调目标价',
+    summary: '截至4月末，中证畜牧指数年内涨幅已超沪深300逾12个百分点，北向资金连续多周净买入相关ETF，机构普遍预期下半年产业逻辑进一步兑现。',
+    time: '2026-04-25T09:30:00', url: 'https://www.stcn.com/'
+  },
+
+  /* ===== 恒生科技 ===== */
+  {
+    indexes: ['HSTECH'],
+    type: 'news', source: '彭博社',
+    title: '港股科技板块强势反弹，恒生科技指数单周涨幅超5%，南水持续涌入',
+    summary: '美联储降息预期升温叠加中国AI政策利好，港股科技板块迎来阶段性修复行情，恒生科技指数单周涨幅创近6个月新高，南向资金单日净买入港科相关ETF超20亿港元。',
+    time: '2026-05-12T10:00:00', url: 'https://www.bloomberg.com/asia'
+  },
+  {
+    indexes: ['HSTECH'],
+    type: 'report', source: '高盛',
+    title: '【研报】高盛：上调恒生科技指数目标至5200点，AI商业化成为核心估值驱动',
+    summary: '高盛研究报告上调港股科技股目标估值，认为大模型推理成本快速下降将加速互联网龙头AI商业化进程，预计腾讯、美团、商汤等头部企业2026-27年盈利复合增速达18-24%。',
+    time: '2026-05-11T09:00:00', url: 'https://www.goldmansachs.com/research'
+  },
+  {
+    indexes: ['HSTECH'],
+    type: 'news', source: '路透社',
+    title: '腾讯Q1净利润超预期，同比增长26%，AI云收入单季首次突破200亿',
+    summary: '腾讯2026年一季报显示，调整后净利润达628亿元，同比增长26%，超出市场预期12%；AI云服务营收同比翻倍，企业微信AI助手付费用户突破千万。',
+    time: '2026-05-09T18:00:00', url: 'https://www.tencent.com/zh-cn/investors.html'
+  },
+  {
+    indexes: ['HSTECH'],
+    type: 'policy', source: '香港特区政府',
+    title: '香港推出"数码港元2.0"试点扩容，科技企业获准接入更多跨境支付场景',
+    summary: '香港金融管理局扩大数字港元试点范围，允许恒生、汇丰、科技企业协作测试跨境零售支付，科技股受政策利好催化，部分港科成分股短线拉升。',
+    time: '2026-05-08T14:00:00', url: 'https://www.hkma.gov.hk/'
+  },
+  {
+    indexes: ['HSTECH'],
+    type: 'report', source: '摩根士丹利',
+    title: '【研报】大摩：港股互联网估值仍具吸引力，美团、京东在华超预期增长支撑整体',
+    summary: '摩根士丹利报告指出，当前恒生科技指数市盈率约21倍，仍低于美股科技板块均值约30%，配置价值显著；美团本地生活渗透率持续提升，维持"增持"评级。',
+    time: '2026-05-07T10:00:00', url: 'https://www.morganstanley.com/research'
+  },
+  {
+    indexes: ['HSTECH'],
+    type: 'news', source: '南华早报',
+    title: '美国科技出口管制新政出炉，业界评估对港股AI芯片供应链影响有限',
+    summary: '分析人士认为，新一轮出口管制主要针对先进制程芯片，对港股科技企业云计算和互联网业务影响有限，但短期市场情绪或有波动。',
+    time: '2026-05-05T16:00:00', url: 'https://www.scmp.com/'
+  },
+  {
+    indexes: ['HSTECH'],
+    type: 'notice', source: '恒生指数公司',
+    title: '恒生指数公司公告：恒生科技指数2026年6月定期检讨，新纳入三只科技股',
+    summary: '本次定期检讨将新纳入名创优品、地平线机器人、商汤科技等科技企业，调整自6月9日起生效，相关指数基金将于当日收盘前完成调仓。',
+    time: '2026-05-03T17:00:00', url: 'https://www.hsi.com.hk/chi/indexes/all-indexes/hstech'
+  },
+  {
+    indexes: ['HSTECH'],
+    type: 'report', source: '中金公司',
+    title: '【研报】中金：港科指南下资金月均净买入超60亿，低位建仓性价比突出',
+    summary: '中金港股策略报告统计，今年以来南向资金月均净买入港股科技相关标的超60亿港元，恒生科技指数当前历史估值分位处于28%，长期配置性价比突出。',
+    time: '2026-04-30T10:00:00', url: 'https://www.cicc.com/research'
+  },
+
+  /* ===== 中证白酒 ===== */
+  {
+    indexes: ['BJ'],
+    type: 'news', source: '证券时报',
+    title: '白酒旺季消费回暖，茅台飞天散瓶价格企稳，渠道信心逐步修复',
+    summary: '据行业渠道反馈，飞天茅台散瓶价格近两周稳定在2450-2500元，部分区域出货速度加快；经销商库存压力环比减轻，旺季备货意愿有所回升。',
+    time: '2026-05-12T08:30:00', url: 'https://www.stcn.com/'
+  },
+  {
+    indexes: ['BJ'],
+    type: 'report', source: '华泰证券',
+    title: '【研报】华泰证券：白酒板块Q2拐点信号初现，渠道去库存接近尾声，估值底部明确',
+    summary: '华泰白酒团队调研报告指出，主要白酒品牌渠道库存水位已从去年高点下降35%以上，宴席场景明显回暖；当前白酒板块估值处于历史22%分位，下行风险有限，首选五粮液、贵州茅台。',
+    time: '2026-05-10T09:30:00', url: 'https://www.htsc.com.cn/research/macroResearch'
+  },
+  {
+    indexes: ['BJ'],
+    type: 'notice', source: '贵州茅台',
+    title: '贵州茅台发布2025年年度报告：净利润731亿，同比增长12.5%，拟每股派息35元',
+    summary: '茅台年报显示，公司实现营业收入1795亿元，同比增长14.1%；净利润731亿元，同比增长12.5%；拟派发末期股息每股35元，全年合计分红超440亿元。',
+    time: '2026-05-08T17:30:00', url: 'https://www.guizhoumaotai.com/gywm/tzzgx/'
+  },
+  {
+    indexes: ['BJ'],
+    type: 'news', source: '第一财经',
+    title: '端午前白酒消费场景提振，婚宴档期密集，次高端整体动销好于预期',
+    summary: '调研数据显示，端午节前婚宴档期相对集中，次高端白酒（300-500元）整体动销好于去年同期；汾酒、古井贡酒等区域龙头反馈出货节奏加快。',
+    time: '2026-05-06T11:00:00', url: 'https://www.yicai.com/'
+  },
+  {
+    indexes: ['BJ'],
+    type: 'report', source: '中金公司',
+    title: '【研报】中金白酒行业深度：2026年量价关系改善，维持行业"超配"，重申茅台、五粮液双目标',
+    summary: '中金认为白酒行业2026年整体量价关系将优于2025年，核心逻辑来自：①渠道去化接近尾声；②宴席需求复苏；③高端品牌提价预期重燃。上调全年行业利润增速预期至10%。',
+    time: '2026-05-03T14:00:00', url: 'https://www.cicc.com/research'
+  },
+  {
+    indexes: ['BJ'],
+    type: 'policy', source: '国务院',
+    title: '国务院《2026消费促进方案》提及传统酒文化消费，利好高端白酒节庆需求',
+    summary: '政策文件明确支持传统节庆文化消费，鼓励白酒等传统特色商品数字化营销创新，白酒龙头企业对此积极响应，新品发布节奏加快。',
+    time: '2026-04-28T09:00:00', url: 'https://www.gov.cn/'
+  },
+  {
+    indexes: ['BJ'],
+    type: 'news', source: '21世纪经济报道',
+    title: '多家白酒龙头一季报超预期，行业复苏进程加速，板块估值底部获确认',
+    summary: '一季报季收官，茅台、五粮液、汾酒均不同程度超出市场预期，受此提振，中证白酒ETF单周资金净流入超15亿元，PE分位从25%附近修复至30%。',
+    time: '2026-04-25T10:00:00', url: 'https://www.21jingji.com/'
+  },
+
+  /* ===== 消费红利 ===== */
+  {
+    indexes: ['XF'],
+    type: 'news', source: '中国证券报',
+    title: '险资持续增配高股息消费股，消费红利指数配置价值凸显，年内涨幅超大盘',
+    summary: '险资配置偏好转向高分红、低估值消费蓝筹，家电、食品、零售龙头获大额增持；消费红利指数股息率达3.82%，远高于十年期国债收益率，吸引大量保险资金流入。',
+    time: '2026-05-12T09:00:00', url: 'https://www.cs.com.cn/'
+  },
+  {
+    indexes: ['XF'],
+    type: 'report', source: '申万宏源',
+    title: '【研报】申万宏源：高股息消费赛道2026年配置价值突出，建议超配消费红利主题',
+    summary: '申万宏源报告指出，在利率下行周期，高股息消费股的绝对收益价值愈发突出；家电和食品饮料龙头凭借稳定的现金流和持续分红，成为市场"压舱石"资产，维持"超配"。',
+    time: '2026-05-09T10:00:00', url: 'https://www.swhyresearch.com/'
+  },
+  {
+    indexes: ['XF'],
+    type: 'news', source: '上海证券报',
+    title: '国家消费促进月正式启动，大宗消费补贴政策扩容，家电零售增速超预期',
+    summary: '全国"消费促进月"活动正式拉开帷幕，家电以旧换新补贴范围扩大至冰洗空调全品类；多省市零售数据显示，4月家电消费同比增长18%，超出市场预期5个百分点。',
+    time: '2026-05-07T08:00:00', url: 'https://www.cnstock.com/'
+  },
+  {
+    indexes: ['XF'],
+    type: 'report', source: '国泰君安',
+    title: '【研报】国泰君安：消费红利风格占优格局延续，分红率提升是估值重估关键变量',
+    summary: '国泰君安分析认为，在"提升上市公司质量"政策引导下，A股消费企业分红比例逐年提升，消费红利类指数长期配置价值持续增强；当前PB仅1.7倍，性价比突出。',
+    time: '2026-05-05T11:00:00', url: 'https://www.gtja.com/investor/research.html'
+  },
+  {
+    indexes: ['XF'],
+    type: 'policy', source: '国家发改委',
+    title: '发改委：进一步完善大宗消费品补贴政策，家电、汽车、家具补贴力度不减',
+    summary: '政策明确2026年继续实施家电汽车以旧换新补贴，财政专项资金规模维持在300亿元以上，对消费品龙头企业营收增长形成直接利好。',
+    time: '2026-05-01T10:00:00', url: 'https://www.ndrc.gov.cn/'
+  },
+  {
+    indexes: ['XF'],
+    type: 'news', source: '东方财富',
+    title: '消费红利ETF年内净流入超50亿，高分红低估值策略受主动基金热捧',
+    summary: '据Wind统计，跟踪消费红利主题的主要ETF年内累计净流入已超50亿元；同期主动偏股基金前十大重仓中消费红利标的占比明显上升，机构配置意愿强烈。',
+    time: '2026-04-28T09:00:00', url: 'https://www.eastmoney.com/'
+  },
+
+  /* ===== 沪深300 ===== */
+  {
+    indexes: ['HS300'],
+    type: 'news', source: '中国证券报',
+    title: '沪深300指数震荡企稳，北向资金单周净流入逾80亿，外资配置热情回升',
+    summary: '本周A股市场整体小幅走高，沪深300站稳3800点关口；北向资金连续五日净流入，单周累计净买入83亿元，主要流向金融、消费和科技板块。',
+    time: '2026-05-12T09:30:00', url: 'https://www.cs.com.cn/'
+  },
+  {
+    indexes: ['HS300'],
+    type: 'report', source: '中信证券',
+    title: '【研报】中信证券A股2026年中期策略：沪深300目标区间4200-4500，成长风格占优',
+    summary: '中信证券年中策略报告上调A股盈利预期，认为经济复苏叠加政策托底，沪深300成分股EPS有望实现8-12%增长，维持全年目标区间4200-4500点，重点推荐科技、消费、医药三大方向。',
+    time: '2026-05-10T08:30:00', url: 'https://www.citics.com/research.html'
+  },
+  {
+    indexes: ['HS300'],
+    type: 'policy', source: '证监会',
+    title: '证监会发布《关于进一步提升上市公司质量的指导意见》，强化分红和回购机制',
+    summary: '新政要求满足条件的上市公司年度分红比例不低于净利润的30%，并扩大股票回购适用范围，有望直接提升沪深300指数的分红总回报水平。',
+    time: '2026-05-06T16:00:00', url: 'https://www.csrc.gov.cn/'
+  },
+  {
+    indexes: ['HS300'],
+    type: 'notice', source: '中证指数',
+    title: '中证指数公司公告：沪深300指数2026年6月定期调整结果，涉及12只成分股变动',
+    summary: '本次定期调整将新纳入12只个股，调出12只；调整后指数行业分布进一步向科技、医药方向倾斜，反映A股市场产业结构升级趋势。',
+    time: '2026-05-04T18:00:00', url: 'https://www.csindex.com.cn/'
+  },
+  {
+    indexes: ['HS300'],
+    type: 'report', source: '广发证券',
+    title: '【研报】广发：沪深300当前估值处合理偏低区间，中长线入场时机渐近',
+    summary: '广发证券量化报告显示，沪深300当前PE约12.8倍，处历史35%分位，PB约1.3倍，性价比较高；同时技术面关键均线支撑有效，建议中长线逐步布局。',
+    time: '2026-04-30T09:00:00', url: 'https://www.gf.com.cn/research'
+  },
+  {
+    indexes: ['HS300'],
+    type: 'news', source: '新华社',
+    title: '4月PMI数据超预期，制造业景气度连续三个月扩张，A股大盘基本面支撑增强',
+    summary: '国家统计局发布4月PMI为51.2，连续三个月位于荣枯线以上，制造业景气度好转；新出口订单分项也出现改善，经济基本面回暖有助于支撑沪深300中长期走势。',
+    time: '2026-04-30T10:30:00', url: 'https://www.stats.gov.cn/sj/zxfb/'
+  },
+
+  /* ===== 纳斯达克100 ===== */
+  {
+    indexes: ['NDX'],
+    type: 'news', source: '路透社',
+    title: '纳斯达克100指数再创历史新高，AI科技浪潮驱动美股持续上行',
+    summary: '受英伟达、微软、谷歌等AI龙头强劲业绩驱动，纳斯达克100指数突破22000点整数关口，创历史新高；市场预期AI资本开支超级周期将延续至2027年。',
+    time: '2026-05-12T08:00:00', url: 'https://www.reuters.com/technology/'
+  },
+  {
+    indexes: ['NDX'],
+    type: 'report', source: '摩根大通',
+    title: '【研报】摩根大通：上调纳斯达克100目标至23500，AI基础设施投资将持续三年',
+    summary: '摩根大通科技研究团队报告认为，AI数据中心建设浪潮将带动芯片、云计算、算法企业持续受益；英伟达H100/H200供不应求状态将延续，维持超配评级。',
+    time: '2026-05-09T09:00:00', url: 'https://www.jpmorgan.com/research'
+  },
+  {
+    indexes: ['NDX'],
+    type: 'news', source: '彭博社',
+    title: '美联储5月会议维持利率不变，释放年内降息信号，科技股情绪全面提振',
+    summary: '美联储5月FOMC会议决定维持联邦基金利率不变，但点阵图显示年内有望降息1-2次；长端利率小幅下行，利好科技成长股估值，纳指盘后大涨逾1.5%。',
+    time: '2026-05-08T06:00:00', url: 'https://www.bloomberg.com/news'
+  },
+  {
+    indexes: ['NDX'],
+    type: 'notice', source: '纳斯达克',
+    title: '纳斯达克公告：纳斯达克100指数2026年6月季度调整，OpenAI子公司拟纳入',
+    summary: '纳斯达克宣布本年度第二次指数定期调整计划，OpenAI旗下上市主体、Anthropic、Scale AI等AI独角兽的纳入可能性引发市场高度关注，指数权重结构或将重大调整。',
+    time: '2026-05-06T22:00:00', url: 'https://indexes.nasdaqindex.com/'
+  },
+  {
+    indexes: ['NDX'],
+    type: 'report', source: '高盛',
+    title: '【研报】高盛：科技七巨头Q1业绩全线超预期，AI货币化进程加速，维持超配',
+    summary: '高盛报告统计，苹果、微软、谷歌、亚马逊、Meta、英伟达、特斯拉一季度净利润平均超预期幅度达14%，AI相关收入贡献度首次超过整体利润增速的50%，超配信号明确。',
+    time: '2026-05-03T10:00:00', url: 'https://www.goldmansachs.com/research'
+  },
+  {
+    indexes: ['NDX'],
+    type: 'policy', source: '美国白宫',
+    title: '拜登政府宣布"AI安全框架"新规，头部科技公司须提交AI模型安全测试报告',
+    summary: '白宫出台AI监管框架要求训练参数超100亿的大型模型企业定期向政府提交安全测试报告，市场初期解读为监管风险增加，后续认为龙头受影响有限，整体偏中性。',
+    time: '2026-04-30T20:00:00', url: 'https://www.whitehouse.gov/'
+  },
+  {
+    indexes: ['NDX'],
+    type: 'news', source: 'CNBC',
+    title: '英伟达2026财年一季度营收290亿美元，数据中心业务同比增长超100%',
+    summary: '英伟达公布2026财年一季报，营收290亿美元，数据中心营收245亿，同比增长104%，超出市场预期约15%；毛利率维持在78%以上，AI芯片超强盈利能力彰显竞争壁垒。',
+    time: '2026-04-23T20:00:00', url: 'https://www.cnbc.com/'
+  },
+
+  /* ===== 跨指数 / 宏观 ===== */
+  {
+    indexes: ['HS300', 'HSTECH'],
+    type: 'news', source: '财联社',
+    title: 'A股港股联动走强，中美贸易摩擦阶段性缓和，外资情绪明显修复',
+    summary: '中美双方在日内瓦举行贸易磋商并发表联合声明，宣布暂缓新一轮关税升级；消息刺激A股和港股同步高开，北向资金当日净流入超100亿元，恒生科技单日涨幅逾3%。',
+    time: '2026-05-11T10:00:00', url: 'https://www.cls.cn/telegraph'
+  },
+  {
+    indexes: ['HS300', 'NDX'],
+    type: 'news', source: '新华社',
+    title: '全球流动性改善，人民币升破7.15，中外资产估值差收窄',
+    summary: '美联储降息预期推动美元指数走弱，人民币对美元升至7.12，创年内新高；人民币升值利好外资流入A股，同时带动QDII基金等跨境投资产品净值上涨。',
+    time: '2026-05-09T09:00:00', url: 'https://www.xinhuanet.com/'
+  },
+  {
+    indexes: ['XM', 'XF', 'BJ', 'HS300'],
+    type: 'policy', source: '中央经济工作会议',
+    title: '中央明确2026年"扩内需促消费"为宏观政策主基调，大消费板块政策支持持续',
+    summary: '国务院出台《2026年促进大宗消费若干措施》，涵盖家电、农产品、食品饮料、餐饮旅游等领域，消费红利、白酒、畜牧等消费类指数有望持续受益政策红利。',
+    time: '2026-05-01T08:00:00', url: 'https://www.gov.cn/'
+  },
+
+  /* ===== 中证畜牧（2025年下半年） ===== */
+  {
+    indexes: ['XM'],
+    type: 'news', source: '中国畜牧业协会',
+    title: '11月全国规模以上生猪定点屠宰量环比增3.2%，出栏体重维持高位',
+    summary: '中国畜牧业协会数据，11月定点屠宰量约2600万头，环比增3.2%，显示市场供应充足；出栏均重约125公斤/头，高于正常水平约8%，短期供给压力持续。',
+    time: '2025-12-15T10:00:00',
+    url: 'https://www.caaa.cn/'
+  },
+  {
+    indexes: ['XM'],
+    type: 'report', source: '国信证券',
+    title: '【研报】国信证券：养殖业深度亏损延续，2026年行业有望实现供需再平衡',
+    summary: '国信指出当前行业亏损程度已接近2021年周期底部水平，产能去化速度决定反转时间窗口；头部企业成本优势使其在亏损期仍能维持运营，份额持续扩张。',
+    time: '2025-11-25T11:00:00',
+    url: 'https://www.guosen.com.cn/'
+  },
+  {
+    indexes: ['XM'],
+    type: 'news', source: '国家统计局',
+    title: '10月CPI同比上涨0.3%，猪价环比降3.8%，通胀整体温和无压力',
+    summary: '10月CPI中猪肉价格环比降3.8%，同比降15.8%；整体CPI保持在温和区间，为货币政策留有空间。',
+    time: '2025-11-10T09:00:00',
+    url: 'https://www.stats.gov.cn/sj/zxfb/'
+  },
+  {
+    indexes: ['XM'],
+    type: 'policy', source: '国务院',
+    title: '国务院支持农产品冷链物流建设，利好规模化养殖企业降低损耗成本',
+    summary: '国务院办公厅印发冷链物流高质量发展意见，提出到2027年农产品冷链流通率提高至35%，有助于养殖龙头企业降低生鲜损耗，提升终端利润率。',
+    time: '2025-10-20T10:00:00',
+    url: 'https://www.gov.cn/'
+  },
+  {
+    indexes: ['XM'],
+    type: 'news', source: '涌益咨询',
+    title: '9月全国生猪出栏量同比增5%，价格维持低位，行业整体亏损约150元/头',
+    summary: '9月全国生猪出栏约6800万头，同比增5%；出栏均价13.2元/公斤，头均亏损约150元；产能去化节奏有所加快，母猪存栏量环比下降0.8%。',
+    time: '2025-10-10T10:00:00',
+    url: 'https://www.swine.com.cn/'
+  },
+  {
+    indexes: ['XM'],
+    type: 'news', source: '农业农村部',
+    title: '8月全国能繁母猪存栏环比再降0.8%，累计去化接近历史底部',
+    summary: '农业农村部监测数据显示8月末全国能繁母猪存栏约4155万头，环比再降0.8%；较2024年高峰下降约14%，接近历史周期底部水平，后续猪价反转基础逐步成熟。',
+    time: '2025-09-20T10:00:00',
+    url: 'https://www.moa.gov.cn/govpublic/XMYS/'
+  },
+  {
+    indexes: ['XM'],
+    type: 'report', source: '招商证券',
+    title: '【研报】招商证券：养殖业底部磨底，建议分批布局，H股弹性更大',
+    summary: '招商证券认为当前猪周期处于底部区域，预计2025年全年头均亏损约100元，下半年随产能去化逐步到位，2026年景气度有望实质性改善；建议关注规模化龙头。',
+    time: '2025-08-28T10:00:00',
+    url: 'https://www.cmschina.com/research.html'
+  },
+  {
+    indexes: ['XM'],
+    type: 'news', source: '农业农村部',
+    title: '4月全国生猪价格跌至13.5元/公斤，养殖户头均亏损约200元',
+    summary: '农业农村部价格监测数据显示，4月全国生猪出栏均价约13.5元/公斤，同比下跌约32%；规模化养殖头均亏损约200元，散户亏损更甚，市场悲观情绪蔓延。',
+    time: '2025-05-20T09:00:00',
+    url: 'https://www.moa.gov.cn/govpublic/XMYS/'
+  },
+  {
+    indexes: ['XM'],
+    type: 'report', source: '广发证券',
+    title: '【研报】广发证券：2026年猪周期前瞻——产能底部已过，景气回升或在下半年',
+    summary: '广发判断产能去化已在2025年Q4基本完成，2026年上半年猪价仍处底部磨底阶段，下半年随消费旺季到来猪价有望启动实质性上行，建议Q2逢低布局。',
+    time: '2025-05-15T09:00:00',
+    url: 'https://www.gf.com.cn/research'
+  },
+
+  /* ===== 恒生科技（2025年下半年） ===== */
+  {
+    indexes: ['HSTECH'],
+    type: 'report', source: '国家发改委',
+    title: '发改委：加快新型信息基础设施建设，适度超前部署算力网络',
+    summary: '新型基础设施加快建设，5G基站总数突破450万，算力网络布局提速，为港科企业国内业务拓展提供基础设施支撑。',
+    time: '2025-12-20T10:00:00',
+    url: 'https://www.ndrc.gov.cn/'
+  },
+  {
+    indexes: ['HSTECH'],
+    type: 'report', source: '汇丰',
+    title: '【研报】汇丰：港股科技估值具备安全边际，2026年或有20%修复空间',
+    summary: '汇丰报告认为恒生科技指数当前PE处于历史中位数下方1个标准差，南向资金持续流入构成底部支撑；中美关系边际改善有望成为估值修复催化剂。',
+    time: '2025-11-15T10:00:00',
+    url: 'https://www.research.hsbc.com/'
+  },
+  {
+    indexes: ['HSTECH'],
+    type: 'news', source: '快手',
+    title: '快手Q3电商GMV同比增长28%，月活跃买家数突破3亿',
+    summary: '快手Q3电商GMV约3500亿元，同比增长28%；月活跃买家数达3.02亿，环比净增1200万；直播电商业务持续扩张，货币化率稳步提升。',
+    time: '2025-11-01T18:00:00',
+    url: 'https://ir.kuaishou.com/'
+  },
+  {
+    indexes: ['HSTECH'],
+    type: 'news', source: '阿里巴巴',
+    title: '阿里云2025财年Q2营收大增18%，AI产品日活用户突破5000万',
+    summary: '阿里巴巴2026财年Q2业绩中，阿里云营收达272亿元，同比增长18%；AI类产品日活用户超5000万，存储和算力收入双双超预期。',
+    time: '2025-11-14T18:00:00',
+    url: 'https://www.alibabagroup.com/zh-cn/investors'
+  },
+  {
+    indexes: ['HSTECH'],
+    type: 'report', source: '瑞银',
+    title: '【研报】瑞银：港股科技股估值折价收窄，AI资本开支超级周期利好龙头',
+    summary: '瑞银策略报告认为，港股科技板块相对A股折价约25%，但AI布局深度不逊于美股；全球AI资本开支超级周期将带动港科头部企业盈利增速超预期。',
+    time: '2025-09-15T10:00:00',
+    url: 'https://www.ubs.com/'
+  },
+  {
+    indexes: ['HSTECH'],
+    type: 'news', source: '腾讯控股',
+    title: '腾讯2025年Q2净利润同比增长22%，视频号广告突破200亿季度营收',
+    summary: '腾讯Q2业绩超预期，总营收1680亿元同比增长11%；视频号广告单季营收首次突破200亿元；微信小店GMV同比翻番，AI产品商业化提速。',
+    time: '2025-08-14T18:00:00',
+    url: 'https://www.tencent.com/zh-cn/investors.html'
+  },
+  {
+    indexes: ['HSTECH'],
+    type: 'news', source: '路透社',
+    title: '美国宣布对华AI芯片新一轮出口限制，港股科技板块短线下挫约3%',
+    summary: '美国商务部BIS宣布限制向中国出口高端AI芯片，禁令覆盖英伟达A100/H100等高端GPU；港科指当日下跌约3%，但分析师认为对互联网平台业务影响有限，建议逢低布局。',
+    time: '2025-06-20T08:00:00',
+    url: 'https://www.reuters.com/technology/'
+  },
+
+  /* ===== 中证白酒（2025年下半年） ===== */
+  {
+    indexes: ['BJ'],
+    type: 'news', source: '山西汾酒',
+    title: '汾酒青花系列全年营收突破150亿，长江以南市场增速超40%',
+    summary: '山西汾酒2025年全年营收约390亿元，同比增长约18%；青花系列营收突破150亿元；长江以南市场增速超40%，全国化布局成效显著。',
+    time: '2025-12-28T18:00:00',
+    url: 'https://www.shanxifenjiujin.com/'
+  },
+  {
+    indexes: ['BJ'],
+    type: 'report', source: '国海证券',
+    title: '【研报】国海证券：白酒估值修复空间30%以上，把握春节旺季前布局窗口',
+    summary: '国海证券认为白酒板块当前PE约25倍，处历史20%分位；春节前渠道备货动销数据将成估值修复催化剂，建议在板块调整中分批布局高端龙头。',
+    time: '2025-12-10T10:00:00',
+    url: 'https://www.ghzq.com.cn/'
+  },
+  {
+    indexes: ['BJ'],
+    type: 'news', source: '泸州老窖',
+    title: '泸州老窖核心产品国窖1573年内两次提价，终端成交价站稳1200元',
+    summary: '泸州老窖年内两次上调国窖1573出厂价，合计涨幅约8%；目前52度国窖1573批价约960元，终端成交价站稳1200元以上，量价平衡策略执行良好。',
+    time: '2025-11-20T10:00:00',
+    url: 'https://www.lzlj.com/'
+  },
+  {
+    indexes: ['BJ'],
+    type: 'news', source: '第一财经',
+    title: '白酒中秋国庆双节动销：高端需求稳健，次高端分化明显',
+    summary: '调研显示今年中秋国庆旺季，茅台、五粮液等高端品牌动销正常，渠道库存基本清零；次高端分化加剧，有全国化布局的汾酒、古井继续抢份额，局部区域品牌承压。',
+    time: '2025-10-05T10:00:00',
+    url: 'https://www.yicai.com/'
+  },
+  {
+    indexes: ['BJ'],
+    type: 'news', source: '证券时报',
+    title: '白酒半年报收官：茅台五粮液营收双超千亿，汾酒增速领跑行业',
+    summary: '六大白酒上市公司2025年上半年业绩均超预期，其中贵州茅台营收约780亿、五粮液约485亿、汾酒约160亿；汾酒35%的增速远超行业均值约15%。',
+    time: '2025-08-28T10:00:00',
+    url: 'https://www.stcn.com/'
+  },
+  {
+    indexes: ['BJ'],
+    type: 'notice', source: '贵州茅台',
+    title: '茅台发布2025年半年报预告：上半年净利润预增约15%，超出市场预期',
+    summary: '贵州茅台披露上半年业绩预告，预计净利润约355亿元，同比增长约15%，略超市场预期；核心原因是茅台酒产销节奏加快，直营渠道占比持续提升。',
+    time: '2025-06-15T18:00:00',
+    url: 'https://www.guizhoumaotai.com/gywm/tzzgx/'
+  },
+
+  /* ===== 消费红利（2025年下半年） ===== */
+  {
+    indexes: ['XF'],
+    type: 'news', source: '国家统计局',
+    title: '11月社会消费品零售总额同比增长4.8%，家电类增长8.5%表现亮眼',
+    summary: '11月社零总额4.26万亿元，同比增长4.8%；家电类零售额同比增长8.5%；以旧换新政策对家电消费拉动效应持续显现。',
+    time: '2025-12-15T10:00:00',
+    url: 'https://www.stats.gov.cn/sj/zxfb/'
+  },
+  {
+    indexes: ['XF'],
+    type: 'policy', source: '商务部',
+    title: '商务部：2026年继续实施家电以旧换新，单件最高补贴1000元',
+    summary: '商务部明确2026年以旧换新政策延续，单件家电最高补贴1000元，补贴范围扩大至洗碗机、蒸烤箱等新兴品类；预计撬动家电零售额增长约3000亿元。',
+    time: '2025-11-25T10:00:00',
+    url: 'https://www.mofcom.gov.cn/'
+  },
+  {
+    indexes: ['XF'],
+    type: 'report', source: '中信建投',
+    title: '【研报】中信建投：消费红利防御价值突出，险资和长期资金持续托底',
+    summary: '中信建投认为在市场波动加大背景下，消费红利指数的高股息+低估值+稳定现金流特征，对险资和长期配置资金吸引力持续增强，下行保护显著。',
+    time: '2025-11-10T10:00:00',
+    url: 'https://www.csc108.com/'
+  },
+  {
+    indexes: ['XF'],
+    type: 'news', source: '美的集团',
+    title: '美的集团前三季度净利润同比增15%，海外业务增速超内销',
+    summary: '美的集团发布三季报，前三季度实现营收约3002亿元，净利润约265亿元，同比增长约15%；海外业务增速21%，超越内销增速12%，全球化战略成效显著。',
+    time: '2025-10-28T18:00:00',
+    url: 'https://www.midea.com/cn/investor-relations'
+  },
+  {
+    indexes: ['XF'],
+    type: 'news', source: '上海证券报',
+    title: '家电以旧换新补贴政策延续超预期，空调、冰箱品类消费额同比增长20%',
+    summary: '商务部数据显示，上半年以旧换新政策拉动家电零售额增加约2800亿元，空调、冰箱、洗衣机三大品类均实现同比两位数增长；美的、格力、海尔三强市占率稳步提升。',
+    time: '2025-08-20T09:00:00',
+    url: 'https://www.cnstock.com/'
+  },
+  {
+    indexes: ['XF'],
+    type: 'policy', source: '国务院',
+    title: '国务院发布《推动消费品工业增品种提品质创品牌行动方案》，消费升级提速',
+    summary: '方案提出力争到2028年消费品工业产值突破20万亿，重点领域产品质量合格率达98%以上；家电、食品、服装等消费品龙头受益于品质消费升级趋势。',
+    time: '2025-06-10T10:00:00',
+    url: 'https://www.gov.cn/'
+  },
+
+  /* ===== 沪深300（2025年下半年） ===== */
+  {
+    indexes: ['HS300'],
+    type: 'news', source: '兴业证券',
+    title: '沪深300战略配置窗口开启，核心资产估值回归进行时',
+    summary: '兴业策略认为沪深300当前估值相对全球可比指数折价约40%，A-H溢价指数处历史高位；2026年外资回流概率较高，核心资产估值修复空间约25-30%。',
+    time: '2025-11-20T10:00:00',
+    url: 'https://www.xyzq.com.cn/'
+  },
+  {
+    indexes: ['HS300'],
+    type: 'news', source: '国家统计局',
+    title: 'Q3 GDP同比增长5.1%，全年目标5%可期，A股盈利基础坚实',
+    summary: '国家统计局公布三季度GDP同比增长5.1%，略高于全年目标增速；前三季度固定资产投资增长4.2%，消费拉动贡献度提升至60%；A股四季度盈利预期有望进一步上调。',
+    time: '2025-10-18T10:00:00',
+    url: 'https://www.stats.gov.cn/sj/zxfb/'
+  },
+  {
+    indexes: ['HS300'],
+    type: 'notice', source: '中证指数公司',
+    title: '沪深300指数2025年Q3定期调整结果发布，新纳入半导体和医疗龙头',
+    summary: '中证指数公司发布沪深300指数2025年第三次季度调整结果，本次新纳入半导体龙头、创新药平台和锂电储能企业等，指数科技含量持续提升。',
+    time: '2025-07-05T17:00:00',
+    url: 'https://www.csindex.com.cn/#/indices/family/detail?indexCode=000300'
+  },
+  {
+    indexes: ['HS300'],
+    type: 'news', source: '中国证券报',
+    title: '5月A股市场整体偏弱，外资净流出约200亿，等待政策催化信号',
+    summary: '5月A股市场在缺乏增量资金背景下呈震荡整理格局；沪深300已连续三周横盘，北向资金月度净流出约200亿元；市场期待政策层面进一步释放积极信号。',
+    time: '2025-05-25T09:00:00',
+    url: 'https://www.cs.com.cn/'
+  },
+
+  /* ===== 纳斯达克100（2025年下半年） ===== */
+  {
+    indexes: ['NDX'],
+    type: 'news', source: '美联储',
+    title: '美联储11月降息25bp，为年内第三次降息，美科技股估值压力缓解',
+    summary: '美联储宣布降息25bp至4.25-4.5%区间，为年内第三次降息；点阵图显示2026年还有2次降息预期；流动性宽松预期推动纳指单日大涨2.1%，科技龙头普遍上涨。',
+    time: '2025-11-07T06:00:00',
+    url: 'https://www.federalreserve.gov/'
+  },
+  {
+    indexes: ['NDX'],
+    type: 'news', source: 'Meta',
+    title: 'Meta Llama 4开源发布，参数规模超越GPT-5，开发者生态加速扩张',
+    summary: 'Meta发布Llama 4系列模型，最大版本参数量达2万亿，超过GPT-5；开源策略使Llama系列全球下载量突破15亿次，Meta股价应声上涨5%。',
+    time: '2025-11-20T18:00:00',
+    url: 'https://investor.fb.com/'
+  },
+  {
+    indexes: ['NDX'],
+    type: 'report', source: '巴克莱',
+    title: '【研报】巴克莱：美股科技估值偏贵但有基本面支撑，2026目标NDX 21000',
+    summary: '巴克莱认为标普500当前远期PE约24倍，但科技巨头EPS增速约18%可支撑当前估值；AI资本开支超级周期延续，纳指仍有约12%上涨空间。',
+    time: '2025-12-15T10:00:00',
+    url: 'https://www.investmentbank.barclays.com/'
+  },
+  {
+    indexes: ['NDX'],
+    type: 'news', source: '彭博社',
+    title: '美联储7月暂停加息，市场押注9月首次降息，纳指创年内新高',
+    summary: '美联储7月维持利率不变，点阵图显示9月可能开始降息周期；市场情绪迅速转向风险偏好，纳指当日大涨2.8%，英伟达、微软等AI龙头领涨。',
+    time: '2025-07-27T06:00:00',
+    url: 'https://www.bloomberg.com/news'
+  },
+  {
+    indexes: ['NDX'],
+    type: 'report', source: '高盛',
+    title: '【研报】高盛：AI算力需求持续爆发，英伟达市值有望突破4万亿美元',
+    summary: '高盛报告指出，AI大模型训练和推理对GPU需求呈几何级数增长，英伟达H100/H200订单积压超12个月；AI基础设施投资进入超级周期。',
+    time: '2025-05-15T09:00:00',
+    url: 'https://www.goldmansachs.com/research'
+  },
+  {
+    indexes: ['NDX'],
+    type: 'news', source: 'Apple',
+    title: '苹果iPhone 17系列发布，AI功能全面集成，出货预期同比增5%',
+    summary: '苹果发布iPhone 17系列，首次全系集成Apple Intelligence，主力配置M系列芯片；分析机构预计首年出货约2.3亿台，较去年同期增长约5%；台积电等供应链受益。',
+    time: '2025-09-10T18:00:00',
+    url: 'https://www.apple.com/investor-relations/'
+  },
+
+  /* ===== 跨指数宏观（2025年下半年） ===== */
+  {
+    indexes: ['HS300', 'HSTECH', 'NDX'],
+    type: 'policy', source: '美国财政部',
+    title: '美国财政部更新半导体出口管制名单，AI芯片限制范围进一步扩大',
+    summary: '美国财政部下属BIS将更多AI芯片相关企业列入实体清单，进一步限制中国获取高端AI芯片；市场预期这将加速国产替代逻辑，半导体设备板块异动。',
+    time: '2025-12-15T22:00:00',
+    url: 'https://www.bis.doc.gov/'
+  },
+  {
+    indexes: ['HS300', 'NDX'],
+    type: 'news', source: 'IMF',
+    title: 'IMF：全球金融条件逐步宽松，新兴市场2026年资金流入有望超预期',
+    summary: 'IMF《全球金融稳定报告》指出美联储进入降息周期后，全球金融条件指数有所放松；新兴市场特别是中国A股有望迎来更多外资流入，沪深300受益明显。',
+    time: '2025-11-05T10:00:00',
+    url: 'https://www.imf.org/'
+  },
+  {
+    indexes: ['XF'],
+    type: 'notice', source: '中证指数公司',
+    title: '消费红利指数Q4成分股调整，新纳入格力、安踏，剔除1只低分红个股',
+    summary: '中证指数发布消费红利指数季度调整，本次新纳入格力电器和安踏体育，剔除分红率不达标的1只个股；调整后指数预期股息率约3.9%，进一步强化高分红特征。',
+    time: '2025-10-15T17:00:00',
+    url: 'https://www.csindex.com.cn/'
+  },
+];
+
+/* ============================================================
+   财经日历数据库
+============================================================ */
+const CALENDAR_DB = [
+  /* ===== 2025年6月 ===== */
+  {
+    date: '2025-06-05', tag: 'macro',
+    title: '美联储6月FOMC利率决议，维持5.25%不变',
+    note: '美联储按兵不动，重申"higher for longer"立场，压制科技股估值；纳斯达克当周小幅回调',
+    url: 'https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm',
+    indexes: ['NDX', 'HSTECH']
+  },
+  {
+    date: '2025-06-10', tag: 'macro',
+    title: '中国5月CPI同比0.3%，PPI同比-1.4%，通缩压力延续',
+    note: '食品价格偏低，猪价回落拖累CPI；PPI连续负增意味着上游企业盈利承压，对畜牧板块有一定警示',
+    url: 'https://www.stats.gov.cn/sj/zxfb/',
+    indexes: ['XM', 'HS300']
+  },
+  {
+    date: '2025-06-16', tag: 'rebalance',
+    title: '沪深300、中证白酒2025年Q2成分股调整生效',
+    note: '贵州茅台、五粮液权重微调；白酒指数剔除1只成分，新增2只次高端酒企',
+    url: 'https://www.csindex.com.cn/',
+    indexes: ['HS300', 'BJ', 'XF']
+  },
+  {
+    date: '2025-06-19', tag: 'macro',
+    title: '美国5月零售销售数据环比+0.1%，低于预期',
+    note: '消费数据偏弱，市场降息预期小幅上升，短期提振纳指',
+    url: 'https://www.census.gov/retail/',
+    indexes: ['NDX']
+  },
+  {
+    date: '2025-06-20', tag: 'macro',
+    title: '中国LPR维持不变，1年期3.45%、5年期3.95%',
+    note: '央行选择观望，货币政策空间仍在，市场预期下半年仍有1次降息窗口',
+    url: 'https://www.pbc.gov.cn/zhengcehuobisi/',
+    indexes: ['HS300', 'XF']
+  },
+  {
+    date: '2025-06-23', tag: 'rebalance',
+    title: '恒生科技指数2025年H1半年度成分股调整生效',
+    note: '小米、快手、比亚迪电子等权重调整；被动资金当日完成换仓，交易量放大',
+    url: 'https://www.hsi.com.hk/chi/indexes/all-indexes/hstech',
+    indexes: ['HSTECH']
+  },
+  {
+    date: '2025-06-30', tag: 'fund',
+    title: '基金二季度报告披露截止，ETF持仓全面公开',
+    note: '各大指数ETF持仓变化反映机构行为，恒生科技/畜牧ETF持仓增减是重要参考',
+    url: 'https://www.amac.org.cn/',
+    indexes: ['XM', 'HSTECH', 'BJ', 'XF', 'HS300']
+  },
+  /* ===== 2025年7月 ===== */
+  {
+    date: '2025-07-04', tag: 'holiday',
+    title: '美国独立日，美股休市一天',
+    note: '节前通常出现防御性操作，关注纳指ETF溢价变化',
+    url: 'https://www.nyse.com/holidays-and-hours',
+    indexes: ['NDX']
+  },
+  {
+    date: '2025-07-08', tag: 'report',
+    title: 'A股2025年半年报预告窗口开启，白酒&消费龙头率先预告',
+    note: '半年报预告集中在7月中下旬，茅台/五粮液中报预告若超预期将提振白酒板块',
+    url: 'https://www.szse.cn/disclosure/listed/bulletinType/',
+    indexes: ['BJ', 'XM', 'XF']
+  },
+  {
+    date: '2025-07-11', tag: 'macro',
+    title: '美国6月CPI数据公布：同比+3.0%，环比+0.1%',
+    note: '通胀继续降温，9月降息概率上升至65%，科技股情绪明显改善',
+    url: 'https://www.bls.gov/cpi/',
+    indexes: ['NDX', 'HSTECH']
+  },
+  {
+    date: '2025-07-15', tag: 'macro',
+    title: '中国二季度GDP数据发布：同比增长5.0%，符合预期',
+    note: '内需偏弱、出口贡献增量；下半年政策发力预期增强，A股流动性预期改善',
+    url: 'https://www.stats.gov.cn/sj/zxfb/',
+    indexes: ['HS300', 'XM', 'XF']
+  },
+  {
+    date: '2025-07-21', tag: 'rebalance',
+    title: '中证畜牧养殖指数2025年Q3样本股调整预公告',
+    note: '圣农发展、温氏股份权重提升，调整生效日在9月第二个交易日',
+    url: 'https://www.csindex.com.cn/',
+    indexes: ['XM']
+  },
+  {
+    date: '2025-07-25', tag: 'report',
+    title: '贵州茅台、五粮液、洋河股份2025年中报陆续发布',
+    note: '白酒核心龙头半年报，动销数据与渠道库存是核心变量，直接影响白酒ETF短期行情',
+    url: 'https://www.szse.cn/disclosure/listed/bulletinType/',
+    indexes: ['BJ']
+  },
+  {
+    date: '2025-07-31', tag: 'macro',
+    title: '美联储7月FOMC维持利率不变，释放9月降息信号',
+    note: '鲍威尔在记者会明确表示"条件正在成熟"，9月降息概率升至80%，纳指当晚大涨',
+    url: 'https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm',
+    indexes: ['NDX', 'HSTECH']
+  },
+  /* ===== 2025年8月 ===== */
+  {
+    date: '2025-08-05', tag: 'macro',
+    title: '日本央行意外加息，日元大幅升值，全球市场恐慌性抛售',
+    note: '日经225单日暴跌12%，恒生科技联动调整；美股VIX指数飙升至65，类似2020年3月水平',
+    url: 'https://www.boj.or.jp/en/mopo/mpmjgaiyo/index.htm',
+    indexes: ['HSTECH', 'NDX']
+  },
+  {
+    date: '2025-08-13', tag: 'macro',
+    title: '美国7月CPI同比+2.9%，首次跌破3%关口',
+    note: '通胀大幅降温，市场情绪迅速修复，科技股强势反弹；恒生科技指数同步拉升',
+    url: 'https://www.bls.gov/cpi/',
+    indexes: ['NDX', 'HSTECH']
+  },
+  {
+    date: '2025-08-18', tag: 'macro',
+    title: '中国7月社融新增1.01万亿，低于预期；M2同比+6.3%',
+    note: '社融偏低反映内需仍弱，市场宽松预期上升；A股短期承压但成长板块有支撑',
+    url: 'https://www.pbc.gov.cn/zhengcehuobisi/',
+    indexes: ['HS300', 'XF']
+  },
+  {
+    date: '2025-08-22', tag: 'macro',
+    title: '美联储杰克逊霍尔年会，鲍威尔正式宣布"降息时机已到"',
+    note: '全球科技股迎来年度最重要催化剂；纳指、恒生科技同步大涨，成为2025年行情分水岭',
+    url: 'https://www.federalreserve.gov/newsevents/speech/',
+    indexes: ['NDX', 'HSTECH', 'HS300']
+  },
+  {
+    date: '2025-08-28', tag: 'report',
+    title: 'A股2025年中报披露截止日，龙头白酒业绩全部公开',
+    note: '上半年白酒行业整体营收增速放缓至5-8%，茅台维持高增，中低端承压；市场预期已充分定价',
+    url: 'https://www.szse.cn/disclosure/listed/bulletinType/',
+    indexes: ['BJ', 'XF', 'XM']
+  },
+  /* ===== 2025年9月 ===== */
+  {
+    date: '2025-09-09', tag: 'rebalance',
+    title: '中证畜牧养殖、消费红利等指数Q3成分调整生效',
+    note: '本年第三次季度调整；消费红利指数新增两只高股息标的，吸引资金配置',
+    url: 'https://www.csindex.com.cn/',
+    indexes: ['XM', 'XF', 'HS300']
+  },
+  {
+    date: '2025-09-11', tag: 'macro',
+    title: '美国8月CPI同比+2.5%，核心CPI环比+0.3%',
+    note: '通胀接近目标，市场对9月降息有充分预期；科技板块维持高位震荡',
+    url: 'https://www.bls.gov/cpi/',
+    indexes: ['NDX']
+  },
+  {
+    date: '2025-09-18', tag: 'macro',
+    title: '美联储首次降息25bp，利率降至5.00-5.25%',
+    note: '2019年以来首次降息落地；全球风险资产普涨，纳指单周涨幅+3.2%，恒生科技+5.1%',
+    url: 'https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm',
+    indexes: ['NDX', 'HSTECH', 'HS300']
+  },
+  {
+    date: '2025-09-24', tag: 'policy',
+    title: '中国央行、证监会、金融监管总局联合发布一揽子金融救市政策',
+    note: '史称"924"行情——降准50bp、降息、下调存量房贷利率，A股单周暴涨9%，成2025年最强催化剂',
+    url: 'https://www.pbc.gov.cn/zhengcehuobisi/',
+    indexes: ['HS300', 'XM', 'BJ', 'XF', 'HSTECH']
+  },
+  {
+    date: '2025-09-26', tag: 'policy',
+    title: '中央政治局会议释放强力稳增长信号，资本市场首次被专项提及',
+    note: '"促进资本市场稳定发展"写入政治局会议通报，明确政策底部，成恒生科技反弹重要催化',
+    url: 'https://www.pbc.gov.cn/zhengcehuobisi/',
+    indexes: ['HS300', 'HSTECH', 'BJ', 'XF']
+  },
+  /* ===== 2025年10月 ===== */
+  {
+    date: '2025-10-01', tag: 'holiday',
+    title: '国庆黄金周，A股休市（10月1日—7日）',
+    note: '"924行情"后首个国庆假期；期间港股、美股正常交易，需关注节后A股补涨或回调空间',
+    url: 'https://www.sse.com.cn/market/hqdata/tradedate/',
+    indexes: ['HS300', 'XM', 'BJ', 'XF']
+  },
+  {
+    date: '2025-10-08', tag: 'holiday',
+    title: 'A股国庆节后首个交易日（"国庆行情"验证时刻）',
+    note: '节后首日沪深300高开低走，行情进入震荡消化期；恒生科技假期间大涨23%，资金溢出效应显著',
+    url: 'https://www.sse.com.cn/market/hqdata/tradedate/',
+    indexes: ['HS300', 'HSTECH', 'BJ', 'XF']
+  },
+  {
+    date: '2025-10-14', tag: 'macro',
+    title: '美国9月CPI同比+2.4%，通胀继续降温',
+    note: '美联储降息路径进一步确认，科技股维持强势；港股、A股联动继续',
+    url: 'https://www.bls.gov/cpi/',
+    indexes: ['NDX', 'HSTECH']
+  },
+  {
+    date: '2025-10-20', tag: 'rebalance',
+    title: '中证指数公司发布2025年Q4成分股调整预公告',
+    note: '季度调整预公告，重点关注畜牧指数新进成分，生效日为11月第二个交易日',
+    url: 'https://www.csindex.com.cn/',
+    indexes: ['XM', 'BJ', 'XF', 'HS300']
+  },
+  {
+    date: '2025-10-23', tag: 'macro',
+    title: '美联储11月FOMC降息预期升温，CME利率期货显示90%概率降息',
+    note: '10月数据出炉后降息概率明确，科技股继续上行，纳指触及历史新高',
+    url: 'https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm',
+    indexes: ['NDX', 'HSTECH']
+  },
+  {
+    date: '2025-10-30', tag: 'fund',
+    title: '基金三季度报告披露截止，2025年Q3机构配置动向全面公开',
+    note: '三季报是"924行情"后机构是否加仓中国资产的重要验证窗口',
+    url: 'https://www.amac.org.cn/',
+    indexes: ['HS300', 'HSTECH', 'XM', 'BJ', 'XF']
+  },
+  /* ===== 2025年11月 ===== */
+  {
+    date: '2025-11-07', tag: 'macro',
+    title: '美联储11月FOMC第二次降息25bp，利率降至4.75-5.00%',
+    note: '降息符合市场预期，美元指数回落，人民币汇率小幅升值；全球资金加速流向新兴市场',
+    url: 'https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm',
+    indexes: ['NDX', 'HSTECH', 'HS300']
+  },
+  {
+    date: '2025-11-10', tag: 'rebalance',
+    title: '中证畜牧养殖、沪深300等Q4成分股调整正式生效',
+    note: '新增成分在生效日涌入被动资金，为指数基金提供阶段性机会',
+    url: 'https://www.csindex.com.cn/',
+    indexes: ['XM', 'HS300', 'XF']
+  },
+  {
+    date: '2025-11-13', tag: 'macro',
+    title: '美国10月CPI同比+2.6%，环比+0.2%，略高于预期',
+    note: '通胀小幅反弹引发12月暂停降息担忧，科技股短期回调；纳指单日跌1.7%',
+    url: 'https://www.bls.gov/cpi/',
+    indexes: ['NDX', 'HSTECH']
+  },
+  {
+    date: '2025-11-20', tag: 'macro',
+    title: '中国10月工业增加值同比+5.3%，消费零售+4.8%',
+    note: '宏观数据显示内需平稳，政策效果逐步显现；对消费红利、沪深300板块有支撑',
+    url: 'https://www.stats.gov.cn/sj/zxfb/',
+    indexes: ['HS300', 'XF', 'XM']
+  },
+  {
+    date: '2025-11-25', tag: 'policy',
+    title: '国务院发布农业现代化行动方案，畜牧规模化养殖专项支持',
+    note: '政策支持生猪/禽类规模化养殖，温氏、圣农等核心标的受益；畜牧ETF短期放量上涨',
+    url: 'https://www.moa.gov.cn/',
+    indexes: ['XM']
+  },
+  /* ===== 2025年12月 ===== */
+  {
+    date: '2025-12-02', tag: 'macro',
+    title: '美国11月非农就业+22.7万，失业率4.2%',
+    note: '就业数据强劲，美联储12月降息预期降至50%；科技股短期承压',
+    url: 'https://www.bls.gov/',
+    indexes: ['NDX']
+  },
+  {
+    date: '2025-12-09', tag: 'macro',
+    title: '中国11月CPI同比+0.2%，PPI同比-2.5%，通缩压力再现',
+    note: '猪价节后回落，叠加油价走低，CPI低于预期；政策宽松预期升温，A股受支撑',
+    url: 'https://www.stats.gov.cn/sj/zxfb/',
+    indexes: ['HS300', 'XM', 'XF']
+  },
+  {
+    date: '2025-12-12', tag: 'rebalance',
+    title: '恒生科技指数2025年H2半年度调整生效',
+    note: '比亚迪电子权重提升，蔚来汽车纳入成分；被动资金涌入，交易量明显放大',
+    url: 'https://www.hsi.com.hk/chi/indexes/all-indexes/hstech',
+    indexes: ['HSTECH']
+  },
+  {
+    date: '2025-12-18', tag: 'macro',
+    title: '美联储12月FOMC暂停降息，维持4.75-5.00%，释放2026年降息放缓信号',
+    note: '点阵图显示2026年仅降息2次（原预期4次），纳指跌3.5%，全球风险资产大幅调整',
+    url: 'https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm',
+    indexes: ['NDX', 'HSTECH', 'HS300']
+  },
+  {
+    date: '2025-12-20', tag: 'rebalance',
+    title: '沪深300、中证白酒、消费红利2025年Q4成分调整生效',
+    note: '年内第四次也是最后一次季度调整，白酒指数微调权重；消费红利纳入1只新高股息标的',
+    url: 'https://www.csindex.com.cn/',
+    indexes: ['HS300', 'BJ', 'XF']
+  },
+  {
+    date: '2025-12-25', tag: 'holiday',
+    title: '美股圣诞节休市，港股休市一天',
+    note: '圣诞假期全球市场流动性大幅收缩，A股虽正常交易，但成交量萎缩，短期以观望为主',
+    url: 'https://www.nyse.com/holidays-and-hours',
+    indexes: ['NDX', 'HSTECH']
+  },
+  {
+    date: '2025-12-31', tag: 'fund',
+    title: '基金四季报预备披露，全年业绩排名正式锁定',
+    note: '年末基金仓位博弈：排名领先的基金持仓保守，落后者抢跑加仓；成交量通常缩量',
+    url: 'https://www.amac.org.cn/',
+    indexes: ['HS300', 'HSTECH', 'BJ', 'XF', 'XM', 'NDX']
+  },
+  /* ===== 2026年1月 ===== */
+  {
+    date: '2026-01-01', tag: 'holiday',
+    title: '元旦，A股休市一天；美股休市',
+    note: '跨年节点，关注节后"元旦行情"开局走势；历史上A股跨年行情胜率较高',
+    url: 'https://www.sse.com.cn/market/hqdata/tradedate/',
+    indexes: ['HS300', 'XM', 'BJ', 'XF']
+  },
+  {
+    date: '2026-01-09', tag: 'rebalance',
+    title: '中证指数公司发布2026年Q1成分股调整预公告',
+    note: '年内首次调整预公告，关注畜牧、消费红利是否有新成分纳入',
+    url: 'https://www.csindex.com.cn/',
+    indexes: ['XM', 'XF', 'BJ', 'HS300']
+  },
+  {
+    date: '2026-01-14', tag: 'macro',
+    title: '美国12月CPI数据公布：同比+2.9%，通胀小幅反弹',
+    note: '通胀数据略超预期，再次延后市场对美联储2026年降息的预期；科技股承压',
+    url: 'https://www.bls.gov/cpi/',
+    indexes: ['NDX', 'HSTECH']
+  },
+  {
+    date: '2026-01-20', tag: 'macro',
+    title: '中国2025年全年GDP数据发布：全年增长5.0%，完成年度目标',
+    note: '官方数据符合预期，政策目标实现；市场关注2026年GDP增长目标是否维持5%',
+    url: 'https://www.stats.gov.cn/sj/zxfb/',
+    indexes: ['HS300', 'XF', 'XM']
+  },
+  {
+    date: '2026-01-28', tag: 'holiday',
+    title: '春节黄金周开始，A股休市（1月28日—2月3日）',
+    note: '春节前一周通常出现红包行情，假期关注港股/美股联动；节后首日行情参考离岸市场情绪',
+    url: 'https://www.sse.com.cn/market/hqdata/tradedate/',
+    indexes: ['HS300', 'XM', 'BJ', 'XF', 'HSTECH']
+  },
+  /* ===== 2026年2月 ===== */
+  {
+    date: '2026-02-04', tag: 'holiday',
+    title: 'A股春节后首个交易日',
+    note: '节后开盘风险评估：关注假期港股涨跌幅，春节档消费数据是否超预期',
+    url: 'https://www.sse.com.cn/market/hqdata/tradedate/',
+    indexes: ['HS300', 'XM', 'XF', 'BJ', 'HSTECH']
+  },
+  {
+    date: '2026-02-12', tag: 'rebalance',
+    title: '中证畜牧养殖、消费红利等2026年Q1成分调整生效',
+    note: '年内首次季度调整生效，新成分在生效日获被动资金流入',
+    url: 'https://www.csindex.com.cn/',
+    indexes: ['XM', 'XF', 'HS300']
+  },
+  {
+    date: '2026-02-16', tag: 'macro',
+    title: '美国1月CPI同比+3.0%，高于预期，降息预期大幅推后',
+    note: '通胀再度反弹，美联储3月降息概率降至不足20%；科技股大幅调整，纳指单周跌2.8%',
+    url: 'https://www.bls.gov/cpi/',
+    indexes: ['NDX', 'HSTECH']
+  },
+  {
+    date: '2026-02-25', tag: 'fund',
+    title: '基金四季度报告披露截止，2025年全年持仓路径公开',
+    note: '四季报反映主动基金2025年全年操作，白酒/消费板块持仓变化备受关注',
+    url: 'https://www.amac.org.cn/',
+    indexes: ['BJ', 'XF', 'XM', 'HS300']
+  },
+  /* ===== 2026年3月 ===== */
+  {
+    date: '2026-03-05', tag: 'policy',
+    title: '全国两会开幕，政府工作报告正式发布',
+    note: '政府工作报告确立2026年经济目标（增长约5%）；若新增农业、消费、科技支持政策，直接利好相关ETF',
+    url: 'https://www.gov.cn/zhuanti/2026lianghui/',
+    indexes: ['HS300', 'XM', 'BJ', 'XF', 'HSTECH']
+  },
+  {
+    date: '2026-03-12', tag: 'macro',
+    title: '美国2月CPI数据公布：同比+2.8%，通胀重新回落',
+    note: '通胀降温令市场修复降息预期，科技股短期反弹；6月降息概率回升至55%',
+    url: 'https://www.bls.gov/cpi/',
+    indexes: ['NDX', 'HSTECH']
+  },
+  {
+    date: '2026-03-16', tag: 'rebalance',
+    title: '中证指数公司发布2026年Q2成分调整预公告',
+    note: '关注是否有新龙头纳入畜牧/消费红利指数，预公告后相关标的通常出现异动',
+    url: 'https://www.csindex.com.cn/',
+    indexes: ['XM', 'XF', 'BJ', 'HS300']
+  },
+  {
+    date: '2026-03-19', tag: 'macro',
+    title: '美联储3月FOMC维持利率不变，声明措辞偏鸽',
+    note: '美联储暂停降息但措辞偏鸽，市场解读为5-6月重启降息；风险资产反弹',
+    url: 'https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm',
+    indexes: ['NDX', 'HSTECH', 'HS300']
+  },
+  {
+    date: '2026-03-25', tag: 'macro',
+    title: '中国2月工业增加值与消费数据发布，年初经济开局数据',
+    note: '两会后首批经济数据，验证政策效果；消费复苏节奏影响消费红利、白酒板块预期',
+    url: 'https://www.stats.gov.cn/sj/zxfb/',
+    indexes: ['HS300', 'XF', 'BJ']
+  },
+  {
+    date: '2026-03-31', tag: 'report',
+    title: 'A股2025年年报披露截止日，全年业绩正式收官',
+    note: '年报披露期：白酒/畜牧/消费龙头全年业绩公开，是一季报行情前的重要定价窗口',
+    url: 'https://www.szse.cn/disclosure/listed/bulletinType/',
+    indexes: ['BJ', 'XM', 'XF', 'HS300']
+  },
+  /* ===== 2026年4月 ===== */
+  {
+    date: '2026-04-01', tag: 'report',
+    title: '上市公司一季报披露窗口正式开启',
+    note: '3月底/4月初是年报+一季报双重披露期；龙头业绩超预期是板块行情的重要催化剂',
+    url: 'https://www.szse.cn/disclosure/listed/bulletinType/',
+    indexes: ['BJ', 'XM', 'XF', 'HS300']
+  },
+  {
+    date: '2026-04-02', tag: 'macro',
+    title: '美国宣布"对等关税"，全球贸易摩擦风险骤升',
+    note: '特朗普宣布对多国加征关税，A股、港股、美股三市同步大幅下跌；恒生科技单日跌超7%',
+    url: 'https://ustr.gov/',
+    indexes: ['HSTECH', 'NDX', 'HS300', 'XF', 'BJ']
+  },
+  {
+    date: '2026-04-09', tag: 'macro',
+    title: '美国暂停对等关税90天，全球风险资产强势反弹',
+    note: '特朗普宣布对大多数国家暂停关税90天，纳指单日涨9%，A股跳空高开，恒生科技涨超10%',
+    url: 'https://ustr.gov/',
+    indexes: ['NDX', 'HSTECH', 'HS300', 'XM', 'BJ', 'XF']
+  },
+  {
+    date: '2026-04-14', tag: 'macro',
+    title: '中国3月CPI同比-0.1%，PPI同比-2.5%，通缩压力再度加重',
+    note: '关税冲击叠加内需偏弱，猪价承压；政策进一步宽松预期升温，对畜牧短期偏负面',
+    url: 'https://www.stats.gov.cn/sj/zxfb/',
+    indexes: ['XM', 'HS300', 'XF']
+  },
+  {
+    date: '2026-04-16', tag: 'rebalance',
+    title: '中证畜牧养殖、沪深300、消费红利2026年Q2成分调整生效',
+    note: '贸易战背景下季度调整，被动资金换仓带来短期扰动；关注成分股进出变化',
+    url: 'https://www.csindex.com.cn/',
+    indexes: ['XM', 'HS300', 'XF', 'BJ']
+  },
+  {
+    date: '2026-04-20', tag: 'macro',
+    title: '中国LPR维持不变，市场预期5月有望降息10bp',
+    note: '央行按兵不动但降息预期升温；外贸压力下降息窗口打开，A股流动性预期改善',
+    url: 'https://www.pbc.gov.cn/zhengcehuobisi/',
+    indexes: ['HS300', 'XF', 'BJ']
+  },
+  {
+    date: '2026-04-28', tag: 'macro',
+    title: '美联储5月FOMC提前来临——维持利率，强调"双重风险"',
+    note: '通胀与就业同向恶化令美联储陷入两难；市场预期年内降息窗口推后至9月',
+    url: 'https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm',
+    indexes: ['NDX', 'HSTECH']
+  },
+  {
+    date: '2026-04-30', tag: 'report',
+    title: 'A股一季度报告披露截止日',
+    note: '一季报业绩验证期收官；白酒板块渠道数据是核心变量，超预期个股有望拉动ETF净值',
+    url: 'https://www.szse.cn/disclosure/listed/bulletinType/',
+    indexes: ['BJ', 'XM', 'XF', 'HS300']
+  },
+  /* 2026年5月 */
+  {
+    date: '2026-05-12', tag: 'report',
+    title: '五粮液、汾酒、洋河发布一季报最后披露截止',
+    note: '白酒板块最后一批一季报今日披露，关注营收和渠道回款数据',
+    url: 'https://www.szse.cn/disclosure/listed/bulletinType/',
+    indexes: ['BJ']
+  },
+  {
+    date: '2026-05-14', tag: 'macro',
+    title: '中国4月CPI、PPI数据发布',
+    note: '通胀数据影响货币政策方向，关注食品项分类，对畜牧板块有直接参考价值',
+    url: 'https://www.stats.gov.cn/sj/zxfb/',
+    indexes: ['HS300', 'XM']
+  },
+  {
+    date: '2026-05-15', tag: 'rebalance',
+    title: '中证指数公司季度样本股调整公告发布（2026年Q2）',
+    note: '季度定期调整结果公告，关注畜牧、白酒等指数成分变化，基金需于下月第三交易日前完成调仓',
+    url: 'https://www.csindex.com.cn/',
+    indexes: ['XM', 'BJ', 'XF', 'HS300']
+  },
+  {
+    date: '2026-05-16', tag: 'macro',
+    title: '美国4月零售销售数据发布，关注消费景气信号',
+    note: '美国消费数据影响全球风险偏好，若超预期有望带动纳指继续走强',
+    url: 'https://www.census.gov/retail/',
+    indexes: ['NDX']
+  },
+  {
+    date: '2026-05-20', tag: 'rebalance',
+    title: '恒生科技指数2026年H1半年度成分股调整生效',
+    note: '调整正式生效日，被动型指数基金须于当日收盘前完成建仓或减仓操作，可能带来流动性机会',
+    url: 'https://www.hsi.com.hk/chi/indexes/all-indexes/hstech',
+    indexes: ['HSTECH']
+  },
+  {
+    date: '2026-05-21', tag: 'macro',
+    title: '美联储5月FOMC会议纪要公布',
+    note: '关注委员对通胀与就业的表述，降息路径预期将影响美股科技股估值逻辑',
+    url: 'https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm',
+    indexes: ['NDX', 'HSTECH']
+  },
+  {
+    date: '2026-05-22', tag: 'dividend',
+    title: '易方达中证畜牧ETF（516670）除权除息日（如有）',
+    note: '本年度第一次分红，关注实际分红金额与权益登记日变化',
+    url: 'https://fund.eastmoney.com/516670.html',
+    indexes: ['XM']
+  },
+  {
+    date: '2026-05-25', tag: 'fund',
+    title: '消费红利ETF（159678）成立满一周年，一季度持仓全部披露',
+    note: '基金成立一周年后须披露完整季报，持仓透明度提升，机构买入路径可查',
+    url: 'https://fund.eastmoney.com/159678.html',
+    indexes: ['XF']
+  },
+  {
+    date: '2026-05-28', tag: 'macro',
+    title: '中国4月社融和M2数据发布（延迟至月底）',
+    note: '货币数据影响流动性预期，社融超预期有望支撑A股整体行情',
+    url: 'https://www.pbc.gov.cn/zhengcehuobisi/',
+    indexes: ['HS300']
+  },
+  {
+    date: '2026-05-30', tag: 'holiday',
+    title: '端午节假期 A股休市（2026年5月30日—6月1日）',
+    note: '端午节前一日通常出现资金博弈，假期期间港股不休市，需关注离岸市场信号',
+    url: 'https://www.sse.com.cn/market/hqdata/tradedate/',
+    indexes: ['HS300', 'XM', 'BJ', 'XF']
+  },
+  /* 2026年6月 */
+  {
+    date: '2026-06-02', tag: 'holiday',
+    title: 'A股端午节后首个交易日，港股正常交易',
+    note: '假期期间若海外市场波动较大，需提前评估节后首日跳空风险',
+    url: 'https://www.sse.com.cn/market/hqdata/tradedate/',
+    indexes: ['HS300', 'HSTECH']
+  },
+  {
+    date: '2026-06-08', tag: 'rebalance',
+    title: '中证指数公司2026年Q2指数调整评价期结束，调整公告预期发布',
+    note: '评价期结束后约一周公布成分调整名单，调整生效于6月第三个交易日',
+    url: 'https://www.csindex.com.cn/',
+    indexes: ['XM', 'BJ', 'XF', 'HS300']
+  },
+  {
+    date: '2026-06-12', tag: 'macro',
+    title: '美国5月CPI数据公布，关键通胀拐点节点',
+    note: 'CPI走势决定美联储三季度降息空间，对全球科技股估值影响显著',
+    url: 'https://www.bls.gov/cpi/',
+    indexes: ['NDX', 'HSTECH']
+  },
+  {
+    date: '2026-06-15', tag: 'rebalance',
+    title: '沪深300、中证白酒、消费红利指数季度调整生效',
+    note: '本年度第二次季度调整正式生效，涉及成分股进出调整，被动基金当日完成换仓',
+    url: 'https://www.csindex.com.cn/',
+    indexes: ['HS300', 'BJ', 'XF']
+  },
+  {
+    date: '2026-06-18', tag: 'dividend',
+    title: '多只白酒ETF分红除权日（五粮液、汾酒分红同步期）',
+    note: '白酒龙头年中分红集中期，持有相关ETF的投资者注意除权净值变化',
+    url: 'https://fund.eastmoney.com/159185.html',
+    indexes: ['BJ']
+  },
+  {
+    date: '2026-06-19', tag: 'macro',
+    title: '美联储6月FOMC利率决议（是否首次降息）',
+    note: '6月是2026年最受关注的货币政策节点，降息落地将重大提振全球风险资产，尤其是成长科技板块',
+    url: 'https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm',
+    indexes: ['NDX', 'HSTECH', 'HS300']
+  },
+  {
+    date: '2026-06-25', tag: 'macro',
+    title: '中国6月LPR利率公告（关注是否降息）',
+    note: '国内货币政策宽松空间是支撑A股流动性的关键，LPR下调有望推动沪深300估值中枢上移',
+    url: 'https://www.pbc.gov.cn/zhengcehuobisi/',
+    indexes: ['HS300']
+  },
+  {
+    date: '2026-06-30', tag: 'fund',
+    title: '基金半年报及二季度报告披露截止，关注各指数ETF前十大持仓变化',
+    note: '基金季报反映机构真实配置路径，恒生科技/畜牧/白酒ETF持仓变化是重要参考信号',
+    url: 'https://www.amac.org.cn/',
+    indexes: ['XM', 'HSTECH', 'BJ', 'XF', 'HS300']
+  },
+  /* 2026年7月 */
+  {
+    date: '2026-07-04', tag: 'holiday',
+    title: '美国独立日假期，美股休市，关注节前仓位变化',
+    note: '美股重要假期前后通常出现方向性行情，纳指相关ETF需关注流动性变化',
+    url: 'https://www.nyse.com/holidays-and-hours',
+    indexes: ['NDX']
+  },
+  {
+    date: '2026-07-10', tag: 'report',
+    title: 'A股2026年半年报预告期开始，关注龙头超预期信号',
+    note: '7月中下旬半年报预告集中发布期，白酒、家电、畜牧龙头业绩预告将是板块短期催化剂',
+    url: 'https://www.szse.cn/disclosure/listed/bulletinType/',
+    indexes: ['BJ', 'XM', 'XF']
+  },
+];
+
+/* ============================================================
+   状态变量
+============================================================ */
+let currentPage    = 'news';
+let newsIndexFilter = 'all';
+let newsTypeFilter  = 'all';
+let newsTimeFilter  = '24h';   // 默认近一年
+let calFilter      = 'all';
+let newsPage       = 1;
+const NEWS_PER_PAGE = 10;
+let filteredNews   = [];
+
+let newsDateFilter = null;     // null 或 'YYYY-MM-DD'，日期回溯
+let calMonthFilter = null;     // null 或 'YYYY-MM'，月份筛选
+
+/* ============================================================
+   页面切换
+============================================================ */
+function switchPage(page) {
+  currentPage = page;
+  document.getElementById('page-news').style.display = page === 'news' ? '' : 'none';
+  document.getElementById('page-cal').style.display  = page === 'cal'  ? '' : 'none';
+  document.getElementById('ptab-news').classList.toggle('active', page === 'news');
+  document.getElementById('ptab-cal').classList.toggle('active', page === 'cal');
+}
+
+/* ============================================================
+   过滤器控制
+============================================================ */
+function setIndexFilter(val) {
+  newsIndexFilter = val;
+  document.querySelectorAll('#index-filter-row .filter-chip').forEach(el => {
+    el.classList.toggle('active', el.dataset.ifilter === val);
+  });
+  newsPage = 1;
+  applyFiltersAndRender();
+}
+
+function setTypeFilter(val) {
+  newsTypeFilter = val;
+  document.querySelectorAll('#type-filter-row .filter-chip').forEach(el => {
+    el.classList.toggle('active', el.dataset.tfilter === val);
+  });
+  newsPage = 1;
+  applyFiltersAndRender();
+}
+
+function setTimeFilter(val) {
+  newsTimeFilter = val;
+  document.querySelectorAll('#time-filter-row .time-chip').forEach(el => {
+    el.classList.toggle('active', el.dataset.time === val);
+  });
+  newsPage = 1;
+  applyFiltersAndRender();
+}
+
+function setCalFilter(val) {
+  calFilter = val;
+  document.querySelectorAll('#cal-filter-row .filter-chip').forEach(el => {
+    el.classList.toggle('active', el.dataset.cfilter === val);
+  });
+  renderCalendar();
+}
+
+/* ============================================================
+   日期回溯（资讯页）
+============================================================ */
+function setNewsDateFilter(dateStr) {
+  if (!dateStr) return;
+  newsDateFilter = dateStr;
+  newsPage = 1;
+  // 显示清除按钮
+  document.getElementById('news-date-clear').style.display = '';
+  // 显示提示
+  const d = new Date(dateStr);
+  const hint = document.getElementById('news-date-hint');
+  if (hint) {
+    hint.textContent = `显示 ${d.getMonth()+1}月${d.getDate()}日 前后7天的资讯`;
+    hint.style.display = '';
+  }
+  // 禁用时间过滤（视觉上）
+  const tr = document.getElementById('time-filter-row');
+  if (tr) tr.classList.add('disabled');
+  applyFiltersAndRender();
+}
+
+function clearNewsDateFilter() {
+  newsDateFilter = null;
+  const picker = document.getElementById('news-date-picker');
+  if (picker) picker.value = '';
+  const clearBtn = document.getElementById('news-date-clear');
+  if (clearBtn) clearBtn.style.display = 'none';
+  const hint = document.getElementById('news-date-hint');
+  if (hint) { hint.textContent = ''; hint.style.display = 'none'; }
+  const tr = document.getElementById('time-filter-row');
+  if (tr) tr.classList.remove('disabled');
+  newsPage = 1;
+  applyFiltersAndRender();
+}
+
+/* ============================================================
+   月份跳转（日历页）
+============================================================ */
+function setCalMonthFilter(monthStr) {
+  if (!monthStr) return;
+  calMonthFilter = monthStr;
+  const [y, m] = monthStr.split('-');
+  const clearBtn = document.getElementById('cal-month-clear');
+  if (clearBtn) clearBtn.style.display = '';
+  const hint = document.getElementById('cal-month-hint');
+  if (hint) {
+    hint.textContent = `当前只显示 ${y}年${parseInt(m)}月 的事件`;
+    hint.style.display = '';
+  }
+  renderCalendar();
+}
+
+function clearCalMonthFilter() {
+  calMonthFilter = null;
+  const picker = document.getElementById('cal-month-picker');
+  if (picker) picker.value = '';
+  const clearBtn = document.getElementById('cal-month-clear');
+  if (clearBtn) clearBtn.style.display = 'none';
+  const hint = document.getElementById('cal-month-hint');
+  if (hint) { hint.textContent = ''; hint.style.display = 'none'; }
+  renderCalendar();
+}
+
+/* ============================================================
+   时间过滤帮助函数
+============================================================ */
+function getTimeThreshold(filterKey) {
+  const now = new Date();
+  const thresholds = {
+    '24h':  new Date(now - 24 * 3600 * 1000),
+    '7d':   new Date(now - 7   * 86400 * 1000),
+    '30d':  new Date(now - 30  * 86400 * 1000),
+    '180d': new Date(now - 180 * 86400 * 1000),
+    '365d': new Date(now - 365 * 86400 * 1000),
+  };
+  return thresholds[filterKey] || new Date(now - 24 * 3600 * 1000);
+}
+
+/* 格式化时间显示 */
+function formatTime(isoStr) {
+  const d = new Date(isoStr);
+  const now = new Date();
+  const diffMs = now - d;
+  const diffMin = Math.floor(diffMs / 60000);
+  const diffH   = Math.floor(diffMs / 3600000);
+  const diffD   = Math.floor(diffMs / 86400000);
+
+  if (diffMin < 60)  return `${diffMin}分钟前`;
+  if (diffH < 24)    return `${diffH}小时前`;
+  if (diffD === 1)   return '昨天';
+  if (diffD < 30)    return `${diffD}天前`;
+
+  // 超过30天显示具体日期
+  const mo = d.getMonth() + 1;
+  const dy = d.getDate();
+  return `${mo}月${dy}日`;
+}
+
+/* ============================================================
+   资讯过滤 & 渲染
+============================================================ */
+/** 仅使用实时抓取的资讯（全部带真实文章链接） */
+function getMergedNewsDB() {
+  return LIVE_NEWS_DB;
+}
+
+function applyFiltersAndRender() {
+  const mergedDB = getMergedNewsDB();
+
+  if (newsDateFilter) {
+    // 日期回溯模式：显示选定日期前后 7 天
+    const center = new Date(newsDateFilter);
+    const lower  = new Date(center.getTime() - 7 * 86400 * 1000);
+    const upper  = new Date(center.getTime() + 7 * 86400 * 1000 + 86399999);
+    filteredNews = mergedDB.filter(n => {
+      const d = new Date(n.time);
+      if (d < lower || d > upper) return false;
+      if (newsIndexFilter !== 'all' && !n.indexes.includes(newsIndexFilter)) return false;
+      if (newsTypeFilter  !== 'all' && n.type !== newsTypeFilter) return false;
+      return true;
+    });
+  } else {
+    const threshold = getTimeThreshold(newsTimeFilter);
+    filteredNews = mergedDB.filter(n => {
+      if (new Date(n.time) < threshold) return false;
+      if (newsIndexFilter !== 'all' && !n.indexes.includes(newsIndexFilter)) return false;
+      if (newsTypeFilter  !== 'all' && n.type !== newsTypeFilter) return false;
+      return true;
+    });
+  }
+
+  filteredNews.sort((a, b) => new Date(b.time) - new Date(a.time));
+
+  const countEl = document.getElementById('news-count-label');
+  if (countEl) countEl.textContent = `共 ${filteredNews.length} 条`;
+
+  renderNewsPage();
+}
+
+function renderNewsPage() {
+  const list = document.getElementById('news-list');
+  if (!list) return;
+
+  const pageItems = filteredNews.slice(0, newsPage * NEWS_PER_PAGE);
+  const hasMore   = filteredNews.length > pageItems.length;
+
+  if (filteredNews.length === 0) {
+    list.innerHTML = '<div class="empty-state">暂无符合条件的资讯<br><span style="font-size:12px;color:var(--text-muted)">尝试调整过滤条件或扩大时间范围</span></div>';
+    document.getElementById('load-more-wrap').style.display = 'none';
+    return;
+  }
+
+  list.innerHTML = pageItems.map(n => buildNewsItem(n)).join('');
+
+  // 加载更多
+  const lmWrap = document.getElementById('load-more-wrap');
+  const lmHint = document.getElementById('load-more-hint');
+  if (hasMore) {
+    lmWrap.style.display = '';
+    const remaining = filteredNews.length - pageItems.length;
+    if (lmHint) lmHint.textContent = `(还有 ${remaining} 条)`;
+  } else {
+    lmWrap.style.display = 'none';
+  }
+}
+
+function buildNewsItem(n) {
+  const indexTags = n.indexes.map(id => {
+    const cfg = INDEX_MAP[id];
+    if (!cfg) return '';
+    return `<span class="news-index-tag" style="background:${cfg.bg};color:${cfg.color}">${cfg.name}</span>`;
+  }).join('');
+
+  const typeLabel = { news: '新闻', report: '研报', policy: '政策', notice: '公告' };
+  const typeClass = { news: 'type-news', report: 'type-report', policy: 'type-policy', notice: 'type-notice' };
+
+  const liveBadge = n.isLive
+    ? '<span class="live-badge">🔴 LIVE</span>'
+    : '';
+
+  return `
+    <div class="news-item" onclick="openNews('${encodeURIComponent(n.url)}','${encodeURIComponent(n.title)}')" role="button" tabindex="0"
+         onkeydown="if(event.key==='Enter'){openNews('${encodeURIComponent(n.url)}','${encodeURIComponent(n.title)}')}">
+      <div class="news-item-meta">
+        ${liveBadge}
+        ${indexTags}
+        <span class="news-type-tag ${typeClass[n.type] || 'type-news'}">${typeLabel[n.type] || n.type}</span>
+        <span class="news-source">${n.source}</span>
+        <span class="news-time">${formatTime(n.time)}</span>
+      </div>
+      <div class="news-title">${n.title}</div>
+      ${n.summary ? `<div class="news-summary">${n.summary}</div>` : ''}
+      <div class="news-footer">
+        <span class="news-link-hint">↗ 查看来源</span>
+      </div>
+    </div>
+  `;
+}
+
+function openNews(encodedUrl, title) {
+  try {
+    let url = decodeURIComponent(encodedUrl);
+    // 只有以 .html/.htm 结尾的 URL 才视为具体文章页，其余全部走搜索
+    const isArticle = /\.html?[\?\#\/]?$/.test(url);
+    if (!isArticle) {
+      const q = encodeURIComponent(title || '');
+      // 优先用百度搜索，标题精确匹配效果更好
+      url = `https://www.baidu.com/s?wd=${encodeURIComponent(title || '')}&rn=5`;
+    }
+    window.open(url, '_blank', 'noopener,noreferrer');
+  } catch(e) {}
+}
+
+function loadMore() {
+  newsPage++;
+  renderNewsPage();
+  // 滚动到新内容处
+  const list = document.getElementById('news-list');
+  if (list) {
+    const items = list.querySelectorAll('.news-item');
+    const newStart = (newsPage - 1) * NEWS_PER_PAGE;
+    if (items[newStart]) {
+      items[newStart].scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+}
+
+/* ============================================================
+   财经日历渲染
+============================================================ */
+function renderCalendar() {
+  const section = document.getElementById('calendar-section');
+  if (!section) return;
+
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  let items = CALENDAR_DB.filter(ev => {
+    if (calFilter !== 'all' && ev.tag !== calFilter) return false;
+    if (calMonthFilter) {
+      const [y, m] = calMonthFilter.split('-').map(Number);
+      const d = new Date(ev.date + 'T00:00:00');
+      if (d.getFullYear() !== y || (d.getMonth() + 1) !== m) return false;
+    }
+    return true;
+  });
+
+  // 按日期升序
+  items.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  if (items.length === 0) {
+    section.innerHTML = '<div class="empty-state">暂无该类型日历事件</div>';
+    return;
+  }
+
+  // 按月分组
+  const groups = {};
+  items.forEach(ev => {
+    const d = new Date(ev.date);
+    const key = `${d.getFullYear()}年${d.getMonth() + 1}月`;
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(ev);
+  });
+
+  const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+
+  section.innerHTML = Object.entries(groups).map(([month, evs]) => {
+    const evHtml = evs.map(ev => {
+      const d = new Date(ev.date);
+      const evDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      const isPast   = evDate < todayStart;
+      const isToday  = evDate.getTime() === todayStart.getTime();
+      const isFuture = evDate > todayStart;
+
+      const dayClass = isPast ? 'calendar-item past-event' :
+                       isToday ? 'calendar-item today-event' : 'calendar-item';
+
+      // 指数小标签（若有）
+      const idxTags = (ev.indexes || []).map(id => {
+        const cfg = INDEX_MAP[id];
+        return cfg ? `<span style="padding:1px 5px;border-radius:3px;font-size:10px;background:${cfg.bg};color:${cfg.color}">${cfg.name}</span>` : '';
+      }).join('');
+
+      const tagLabel = {
+        rebalance: '指数调仓', dividend: '基金分红', report: '财报/业绩',
+        macro: '宏观事件', holiday: '休市/假期', fund: '基金事件'
+      };
+
+      return `
+        <div class="${dayClass}" onclick="window.open('https://www.baidu.com/s?wd=${encodeURIComponent(ev.title)}&rn=5','_blank','noopener,noreferrer')"
+          <div class="cal-date-block">
+            <div class="cal-month-num">${d.getMonth() + 1}月</div>
+            <div class="cal-day-num">${d.getDate()}</div>
+            <div class="cal-weekday">${isToday ? '今天' : '周' + weekdays[d.getDay()]}</div>
+          </div>
+          <div class="cal-divider"></div>
+          <div class="cal-body">
+            <div class="cal-tags">
+              <span class="cal-tag ${ev.tag}">${tagLabel[ev.tag] || ev.tag}</span>
+              ${idxTags}
+            </div>
+            <div class="cal-title">${ev.title}</div>
+            ${ev.note ? `<div class="cal-note">${ev.note}</div>` : ''}
+            <div class="cal-link-hint">↗ 点击查看详情</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    return `
+      <div class="cal-month-group">
+        <div class="cal-month-title">${month}</div>
+        ${evHtml}
+      </div>
+    `;
+  }).join('');
+}
+
+/* ============================================================
+   刷新
+============================================================ */
+function handleRefresh() {
+  // 点击刷新按钮时：手动触发实时抓取
+  fetchLiveNews();
+}
+
+/* ============================================================
+   Toast
+============================================================ */
+function showToast(msg) {
+  const c = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity 0.4s'; }, 2000);
+  setTimeout(() => { c.removeChild(t); }, 2500);
+}
+
+/* ============================================================
+   初始化
+============================================================ */
+/* ============================================================
+   实时资讯抓取（东方财富 xcvts 代理 API，CORS 已支持）
+============================================================ */
+let LIVE_NEWS_DB = [];          // 实时抓取的资讯
+let LIVE_FETCH_ERROR = null;    // 抓取错误信息
+let LIVE_FETCH_LOADING = false; // 是否正在抓取
+
+const INDEX_KEYWORDS = {
+  'XM':     ['猪', '畜牧', '生猪', '温氏', '牧原', '圣农', '新希望', '正邦', '天邦', '傲农', '大北农', '中粮', '唐人神'],
+  'HSTECH': ['腾讯', '阿里', '小米', '恒生科技', '港股科技', '京东', '网易', '百度', '美团', '字节', '快手', '比亚迪', '蔚来', '理想', '小鹏', 'HSTECH'],
+  'BJ':     ['茅台', '五粮液', '汾酒', '洋河', '白酒', '泸州老窖', '古井贡', '舍得', '酒鬼', '今世缘', '口子窖'],
+  'XF':     ['消费红利', '零售', '消费', '内需', '社零', '零售额', '消费ETF'],
+  'HS300':  ['沪深300', 'A股', '大盘', '上证', '深证', '主板', '蓝筹'],
+  'NDX':    ['纳斯达克', '纳指', '美股', '标普', '道琼斯', 'S&P', 'Nasdaq', '美联储', '降息', '加息', 'FOMC', 'CPI', 'PCE']
+};
+
+const INDEX_CN = {
+  'XM': '中证畜牧', 'HSTECH': '恒生科技',
+  'BJ': '中证白酒', 'XF': '消费红利',
+  'HS300': '沪深300', 'NDX': '纳斯达克100'
+};
+
+/** 识别资讯属于哪个指数 */
+function matchIndexes(title, summary) {
+  const text = (title + ' ' + (summary || ''));
+  const matched = [];
+  for (const [idx, kws] of Object.entries(INDEX_KEYWORDS)) {
+    if (kws.some(k => text.includes(k))) matched.push(idx);
+  }
+  return matched.length > 0 ? matched : ['NDX']; // 无法识别时归入纳指
+}
+
+/** 抓取实时资讯（CORS 支持，可直接在浏览器调用） */
+async function fetchLiveNews() {
+  if (LIVE_FETCH_LOADING) return;
+  LIVE_FETCH_LOADING = true;
+
+  const btn = document.getElementById('refresh-btn');
+  if (btn) {
+    btn.classList.add('refreshing');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="refresh-icon">↻</span> 抓取中…';
+  }
+
+  try {
+    const resp = await fetch('http://api.xcvts.cn/api/hotlist/eastmoney?type=102', {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' },
+    });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const json = await resp.json();
+
+    const items = json.data || [];
+
+    // 增量合并：新条目加入，旧条目保留，按 URL 去重
+    const existingUrls = new Set(LIVE_NEWS_DB.map(n => n.url));
+    const newItems = items
+      .filter(item => item.url && !existingUrls.has(item.url))
+      .map(item => {
+      const title = item.title || '';
+      const url = item.url || '';
+      const timeStr = item.time || '';
+      // 东方财富时间格式：2026-05-13 16:37:30 → ISO: 2026-05-13T16:37:30
+      const isoTime = timeStr.replace(' ', 'T');
+      const summary = '';
+
+      return {
+        indexes: matchIndexes(title, summary),
+        type: url.includes('report') || url.includes('research') ? 'report' : 'news',
+        source: '东方财富',
+        title: title,
+        summary: '',
+        time: isoTime,
+        url: url,           // ← 真实文章 URL，直接可用
+        isLive: true        // 标记为实时抓取
+      };
+    });
+
+    // 合并新旧数据（去重）
+    LIVE_NEWS_DB = [...LIVE_NEWS_DB, ...newItems];
+
+    LIVE_FETCH_ERROR = null;
+
+    // 更新时间戳
+    const ts = document.getElementById('update-time');
+    if (ts) {
+      const now = new Date();
+      ts.textContent = `${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')} 抓取成功`;
+      ts.style.display = '';
+    }
+
+    // 重新渲染资讯列表
+    applyFiltersAndRender();
+
+  } catch (e) {
+    LIVE_FETCH_ERROR = e.message;
+    console.warn('实时资讯抓取失败:', e.message);
+    const ts = document.getElementById('update-time');
+    if (ts) {
+      ts.textContent = '抓取失败';
+      ts.style.display = '';
+    }
+  } finally {
+    LIVE_FETCH_LOADING = false;
+    if (btn) {
+      btn.classList.remove('refreshing');
+      btn.disabled = false;
+      btn.innerHTML = '<span class="refresh-icon">↻</span> 刷新';
+    }
+  }
+}
+
+/** 页面加载时自动抓取一次 */
+function init() {
+  // 默认加载资讯（近24小时）
+  applyFiltersAndRender();
+  // 渲染日历
+  renderCalendar();
+
+  // 自动抓取实时资讯（静默，不阻塞渲染）
+  fetchLiveNews();
+
+  // 每 5 分钟自动刷新一次
+  setInterval(fetchLiveNews, 5 * 60 * 1000);
+
+  // 时间戳
+  const ts = document.getElementById('update-time');
+  if (ts) {
+    const now = new Date();
+    ts.textContent = `${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')} 加载`;
+    ts.style.display = '';
+  }
+}
+
+// 页面就绪后初始化
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+</script>
+
+</body>
+</html>
