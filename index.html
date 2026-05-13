@@ -2580,12 +2580,24 @@ async function fetchLiveNews() {
   }
 
   try {
-    const resp = await fetch('https://api.xcvts.cn/api/hotlist/eastmoney?type=102', {
-      method: 'GET',
-      headers: { 'Accept': 'application/json' },
-    });
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const json = await resp.json();
+    let json;
+
+    // 方式一：通过 allorigins CORS 代理（兼容性最强）
+    try {
+      const proxyResp = await fetch(
+        `https://api.allorigins.win/raw?url=${encodeURIComponent('https://api.xcvts.cn/api/hotlist/eastmoney?type=102')}`
+      );
+      if (!proxyResp.ok) throw new Error(`Proxy HTTP ${proxyResp.status}`);
+      json = await proxyResp.json();
+    } catch(_) {
+      // 方式二：直接请求（API 支持 CORS 时可用）
+      const directResp = await fetch('https://api.xcvts.cn/api/hotlist/eastmoney?type=102', {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' },
+      });
+      if (!directResp.ok) throw new Error(`Direct HTTP ${directResp.status}`);
+      json = await directResp.json();
+    }
 
     const items = json.data || [];
 
